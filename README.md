@@ -5,6 +5,8 @@
 [![Code Review: Passed](https://img.shields.io/badge/Code%20Review-Passed-brightgreen.svg)](https://github.com/alibaba/open-code-review)
 [![Monitoring Since](https://img.shields.io/badge/Monitoring%20Since-2026--08--15-orange.svg)](#)
 
+[**中文说明**](README.md) | [**English Documentation**](README_EN.md)
+
 **LLM Market Data** 是一个自动化、轻量级的大语言模型（LLM）市场指标与使用数据聚合归档系统。本项目针对以 [OpenRouter](https://openrouter.ai/) 为代表的模型聚合市场，全天候自动化追踪模型定价、Token 消耗流速、应用分类排行榜、会话成本及历史每日使用排名，为 AI 市场分析、行业研究与定价决策提供可复现的结构化数据基础。
 
 > 📅 **数据监控与归档起始时间**：
