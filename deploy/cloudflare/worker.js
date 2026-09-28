@@ -4,6 +4,7 @@ export default {
     const repo = env.GITHUB_REPO;
     const workflowFile = env.WORKFLOW_FILE || "collector.yml";
     const pat = env.GITHUB_PAT;
+    const branch = env.GITHUB_REF || env.GITHUB_BRANCH || "main";
     const maxRequests = env.MAX_REQUESTS_PER_RUN || "40";
 
     if (!owner || !repo || !pat) {
@@ -14,18 +15,18 @@ export default {
       throw new Error(`Missing required env vars: ${missing.join(", ")}`);
     }
 
-    const payload = {
-      ref: branch,
-      inputs: {
-        max_requests: maxRequests
-      }
-    };
-    if (env.LOOKBACK_DAYS) {
-      payload.inputs.lookback_days = env.LOOKBACK_DAYS;
-    }
-
-    const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
     try {
+      const payload = {
+        ref: branch,
+        inputs: {
+          max_requests: maxRequests
+        }
+      };
+      if (env.LOOKBACK_DAYS) {
+        payload.inputs.lookback_days = env.LOOKBACK_DAYS;
+      }
+
+      const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
       const response = await fetch(url, {
         method: "POST",
         headers: {

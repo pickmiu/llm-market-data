@@ -91,7 +91,6 @@ def sync_models(
     return out_file
 
 def _sync_frontend_snapshot(
-    crawler: OpenRouterWebCrawler,
     data_dir: Path,
     subdir: str,
     fetch_fn,
@@ -130,7 +129,7 @@ def sync_apps(
     force: bool = False
 ) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Apps & Coding Agents leaderboard snapshot."""
-    return _sync_frontend_snapshot(crawler, data_dir, "apps", crawler.fetch_apps, target_date, force, default_data={})
+    return _sync_frontend_snapshot(data_dir, "apps", crawler.fetch_apps, target_date, force, default_data={})
 
 def sync_task_spend(
     crawler: OpenRouterWebCrawler,
@@ -139,7 +138,7 @@ def sync_task_spend(
     force: bool = False
 ) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Top Models by Task spend snapshot."""
-    return _sync_frontend_snapshot(crawler, data_dir, "task_spend", crawler.fetch_task_spend, target_date, force, default_data={})
+    return _sync_frontend_snapshot(data_dir, "task_spend", crawler.fetch_task_spend, target_date, force, default_data={})
 
 def sync_session_cost(
     crawler: OpenRouterWebCrawler,
@@ -148,7 +147,7 @@ def sync_session_cost(
     force: bool = False
 ) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Cost per session snapshot."""
-    return _sync_frontend_snapshot(crawler, data_dir, "session_cost", crawler.fetch_session_cost, target_date, force, default_data={})
+    return _sync_frontend_snapshot(data_dir, "session_cost", crawler.fetch_session_cost, target_date, force, default_data={})
 
 def sync_benchmarks(
     crawler: OpenRouterWebCrawler,
@@ -157,7 +156,7 @@ def sync_benchmarks(
     force: bool = False
 ) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Benchmarks snapshot."""
-    return _sync_frontend_snapshot(crawler, data_dir, "benchmarks", crawler.fetch_benchmarks, target_date, force, default_data={})
+    return _sync_frontend_snapshot(data_dir, "benchmarks", crawler.fetch_benchmarks, target_date, force, default_data={})
 
 def sync_performance(
     crawler: OpenRouterWebCrawler,
@@ -166,7 +165,7 @@ def sync_performance(
     force: bool = False
 ) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Fastest models (performance) snapshot."""
-    return _sync_frontend_snapshot(crawler, data_dir, "performance", crawler.fetch_performance, target_date, force, default_data=[])
+    return _sync_frontend_snapshot(data_dir, "performance", crawler.fetch_performance, target_date, force, default_data=[])
 
 def sync_rankings_daily(
     client: OpenRouterClient,
@@ -190,6 +189,7 @@ def sync_rankings_daily(
             break
 
         try:
+            requests_made += 1
             res = client.get_rankings_daily(start_date=start_d, end_date=end_d)
             records = res.get("data", [])
             as_of = res.get("asOf")
@@ -221,8 +221,6 @@ def sync_rankings_daily(
                         json.dump(day_snapshot, f, indent=2, ensure_ascii=False)
                     fetched_days += 1
                 curr += datetime.timedelta(days=1)
-
-            requests_made += 1
         except OpenRouterAPIError as exc:
             failed.append({"range": f"{start_d}..{end_d}", "error": str(exc)})
             continue

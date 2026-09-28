@@ -187,4 +187,18 @@ def test_sync_rankings_daily_skips_dates_without_data(tmp_path):
     # 2026-09-26 must NOT be created as empty file so it stays missing
     assert not (tmp_path / "rankings_daily" / "2026-09-26.json").exists()
 
+def test_sync_rankings_daily_counts_failed_requests_toward_max_requests(tmp_path):
+    from sources.openrouter.client import OpenRouterAPIError
+
+    client = MagicMock()
+    client.get_rankings_daily.side_effect = OpenRouterAPIError("500 Server Error")
+
+    missing_dates = ["2026-09-27", "2026-09-26", "2026-09-25"]
+    stats = sync_rankings_daily(client, tmp_path, missing_dates, max_requests=2, chunk_size=1)
+
+    assert stats["requests_made"] == 2
+    assert client.get_rankings_daily.call_count == 2
+    assert len(stats["failed"]) == 2
+
+
 
