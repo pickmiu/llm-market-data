@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sources.openrouter.sync import run_sync
 
-load_dotenv()
+load_dotenv(override=True)
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LLM Market Data CLI")
