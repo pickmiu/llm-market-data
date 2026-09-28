@@ -38,7 +38,8 @@ llm-market-data/
 │       ├── apps/                 # YYYY-MM-DD.json（Coding Agents / Apps 排行快照，来自公开前端 API）
 │       ├── task_spend/           # YYYY-MM-DD.json（Top models by task: 各场景与任务份额快照，来自公开前端 API）
 │       ├── session_cost/         # YYYY-MM-DD.json（Cost per session: 各 Coding Agent 会话轮次开销快照，来自公开前端 API）
-│       └── benchmarks/           # YYYY-MM-DD.json（Artificial Analysis & Dev Arena 基准评测与加权价格快照，来自公开前端 API）
+│       ├── benchmarks/           # YYYY-MM-DD.json（Artificial Analysis & Dev Arena 基准评测与加权价格快照，来自公开前端 API）
+│       └── performance/          # YYYY-MM-DD.json（Fastest models: 各模型推理吞吐量 tok/s 与延迟快照，来自公开前端 API）
 ├── deploy/
 │   └── cloudflare/
 │       ├── wrangler.toml         # Cloudflare Worker Cron Trigger 配置文件
@@ -136,7 +137,21 @@ llm-market-data/
   - `costPerRequest`: 各模型的单次请求成本分布
 - **归档格式**：保存为每日完整快照 `data/openrouter/benchmarks/YYYY-MM-DD.json`。
 
-### 3.7 幂等规则
+### 3.7 模型推理速度与性能快照：Fastest Models & Performance (`performance/YYYY-MM-DD.json`)
+- **来源**：直接通过公开 REST 接口 `GET https://openrouter.ai/api/frontend/v1/rankings/performance` 获取纯 JSON（免鉴权）。
+- **指标含义**：横向对比各大模型在 OpenRouter 接入的所有云厂商与推理机房的实际响应性能（吞吐量与首字/端到端延迟），包含散点图与服务节点详情。
+- **核心数据项**：
+  - `p50_throughput`: P50 吞吐量（Token/秒，如 `gpt-oss-120b`: 700 tok/s, `gpt-oss-safeguard-20b`: 607 tok/s 等）
+  - `best_throughput_provider`: 最优吞吐量提供商（如 Cerebras, Groq, Amazon Bedrock 等）
+  - `best_throughput_price`: 最优吞吐量节点价格（$/1M tokens）
+  - `p50_latency`: P50 延迟时间（毫秒）
+  - `best_latency_provider`: 最优延迟提供商
+  - `best_latency_price`: 最优延迟节点价格
+  - `request_count`: 该模型的请求热度统计
+  - `provider_count`: 提供该模型推理的提供商数量
+- **归档格式**：保存为每日完整快照 `data/openrouter/performance/YYYY-MM-DD.json`。
+
+### 3.8 幂等规则
 - 检查目标 JSON 文件：若已存在且为非空合法 JSON，直接跳过；
 - 支持传入 `--force` 参数以允许重新覆盖（例如手动强制刷新特定日期）。
 
