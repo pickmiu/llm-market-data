@@ -11,10 +11,6 @@ on:
         description: 'Maximum API requests for backfilling in this run'
         required: false
         default: '40'
-      openrouter_api_key:
-        description: 'Optional: OpenRouter API key passed dynamically from scheduler or trigger'
-        required: false
-        default: ''
   # schedule:
   #   # Secondary backup trigger: 01:30 UTC daily (commented to avoid duplicate daily runs with Cloudflare Worker)
   #   - cron: '30 1 * * *'
@@ -47,20 +43,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Mask sensitive input
-        if: ${{ github.event.inputs.openrouter_api_key != '' }}
-        env:
-          DISPATCH_KEY: ${{ github.event.inputs.openrouter_api_key }}
-        run: echo "::add-mask::$DISPATCH_KEY"
-
       - name: Run data synchronization
         env:
-          INPUT_KEY: ${{ github.event.inputs.openrouter_api_key }}
-          SECRET_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days }}
           MAX_REQUESTS: ${{ github.event.inputs.max_requests || '40' }}
         run: |
-          export OPENROUTER_API_KEY="${INPUT_KEY:-$SECRET_KEY}"
           LOOKBACK_FLAG=""
           if [ -n "$LOOKBACK_DAYS" ]; then
             LOOKBACK_FLAG="--lookback-days $LOOKBACK_DAYS"

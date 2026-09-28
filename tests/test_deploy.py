@@ -16,10 +16,8 @@ def test_deploy_configs_exist():
     worker_text = worker_file.read_text()
     assert "workflow_dispatch" in worker_text or "dispatches" in worker_text
     assert "GITHUB_PAT" in worker_text
-    assert "openrouter_api_key" in worker_text
 
     workflow_text = workflow_file.read_text()
     assert "workflow_dispatch:" in workflow_text
-    assert "openrouter_api_key:" in workflow_text
     assert "python cli.py sync" in workflow_text
-    assert "OPENROUTER_API_KEY" in workflow_text
+    assert "OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}" in workflow_text

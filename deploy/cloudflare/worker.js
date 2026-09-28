@@ -14,7 +14,6 @@ export default {
       throw new Error(`Missing required env vars: ${missing.join(", ")}`);
     }
 
-    const branch = env.GITHUB_REF || "main";
     const payload = {
       ref: branch,
       inputs: {
@@ -23,9 +22,6 @@ export default {
     };
     if (env.LOOKBACK_DAYS) {
       payload.inputs.lookback_days = env.LOOKBACK_DAYS;
-    }
-    if (env.OPENROUTER_API_KEY) {
-      payload.inputs.openrouter_api_key = env.OPENROUTER_API_KEY;
     }
 
     const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
