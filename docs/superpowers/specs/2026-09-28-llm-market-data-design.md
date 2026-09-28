@@ -37,7 +37,8 @@ llm-market-data/
 │       ├── rankings_daily/       # YYYY-MM-DD.json（官方每日 Top 50 模型 Token 调用量明细，来自 API）
 │       ├── apps/                 # YYYY-MM-DD.json（Coding Agents / Apps 排行快照，来自公开前端 API）
 │       ├── task_spend/           # YYYY-MM-DD.json（Top models by task: 各场景与任务份额快照，来自公开前端 API）
-│       └── session_cost/         # YYYY-MM-DD.json（Cost per session: 各 Coding Agent 会话轮次开销快照，来自公开前端 API）
+│       ├── session_cost/         # YYYY-MM-DD.json（Cost per session: 各 Coding Agent 会话轮次开销快照，来自公开前端 API）
+│       └── benchmarks/           # YYYY-MM-DD.json（Artificial Analysis & Dev Arena 基准评测与加权价格快照，来自公开前端 API）
 ├── deploy/
 │   └── cloudflare/
 │       ├── wrangler.toml         # Cloudflare Worker Cron Trigger 配置文件
@@ -122,7 +123,20 @@ llm-market-data/
       - `long` (50+ turns): 深度长任务典型开销
 - **归档格式**：保存为每日完整快照 `data/openrouter/session_cost/YYYY-MM-DD.json`。
 
-### 3.6 幂等规则
+### 3.6 模型基准测评与性价比快照：Benchmarks (`benchmarks/YYYY-MM-DD.json`)
+- **来源**：直接通过公开 REST 接口 `GET https://openrouter.ai/api/frontend/v1/rankings/benchmarks` 获取纯 JSON（免鉴权）。
+- **指标含义**：整合权威第三方评测机构（如 Artificial Analysis 和 Dev Arena）的多维智力、编码、智能体能力指数，以及对应的模型加权输入价格。
+- **核心数据项**：
+  - `aaData` (Artificial Analysis 权威指数)：
+    - `intelligence`: 综合智力指数排行榜（如 Claude Opus 5.5: 57.6, Claude Fable 5.1: 53.4, Qwen3.8 Max: 53.4 等）
+    - `coding`: 代码生成与编程能力评测指数
+    - `agentic`: 智能体与工具调用评测指数
+  - `daData` (Dev Arena 评测分项)：涵盖 website, 3d, dataviz, gamedev 等领域的 Arena Elo 评分
+  - `weightedInputPrices`: 各模型在 OpenRouter 上的实际加权输入成本（$/1M tokens，散点图 X 轴核心基准）
+  - `costPerRequest`: 各模型的单次请求成本分布
+- **归档格式**：保存为每日完整快照 `data/openrouter/benchmarks/YYYY-MM-DD.json`。
+
+### 3.7 幂等规则
 - 检查目标 JSON 文件：若已存在且为非空合法 JSON，直接跳过；
 - 支持传入 `--force` 参数以允许重新覆盖（例如手动强制刷新特定日期）。
 
