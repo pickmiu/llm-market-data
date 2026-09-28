@@ -23,6 +23,7 @@
   - `data/openrouter/rankings_daily/YYYY-MM-DD.json`
   - `data/openrouter/apps/YYYY-MM-DD.json`
   - `data/openrouter/task_spend/YYYY-MM-DD.json`
+  - `data/openrouter/session_cost/YYYY-MM-DD.json`
 - **Scheduler Cron**: `30 0 * * *` (UTC 00:30, Beijing 08:30).
 - **Git Push Rule**: Agent must NEVER automatically push to remote Git repository without explicit confirmation from the human partner.
 
@@ -48,6 +49,7 @@
 - Create: `data/openrouter/rankings_daily/.gitkeep`
 - Create: `data/openrouter/apps/.gitkeep`
 - Create: `data/openrouter/task_spend/.gitkeep`
+- Create: `data/openrouter/session_cost/.gitkeep`
 - Test: `tests/test_scaffold.py`
 
 **Interfaces:**
@@ -70,6 +72,7 @@ def test_project_structure():
     assert (root / "data" / "openrouter" / "rankings_daily").is_dir()
     assert (root / "data" / "openrouter" / "apps").is_dir()
     assert (root / "data" / "openrouter" / "task_spend").is_dir()
+    assert (root / "data" / "openrouter" / "session_cost").is_dir()
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -113,12 +116,14 @@ mkdir -p data/openrouter/models
 mkdir -p data/openrouter/rankings_daily
 mkdir -p data/openrouter/apps
 mkdir -p data/openrouter/task_spend
+mkdir -p data/openrouter/session_cost
 touch sources/__init__.py
 touch sources/openrouter/__init__.py
 touch data/openrouter/models/.gitkeep
 touch data/openrouter/rankings_daily/.gitkeep
 touch data/openrouter/apps/.gitkeep
 touch data/openrouter/task_spend/.gitkeep
+touch data/openrouter/session_cost/.gitkeep
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -376,7 +381,7 @@ git commit -m "feat(sources): implement OpenRouter API client with rate pacing a
 
 ---
 
-### Task 3: OpenRouter Frontend Ecosystem Leaderboards (Apps & Task Spend)
+### Task 3: OpenRouter Frontend Ecosystem Leaderboards (Apps, Task Spend & Session Cost)
 
 **Files:**
 - Create: `sources/openrouter/crawler.py`
@@ -386,12 +391,14 @@ git commit -m "feat(sources): implement OpenRouter API client with rate pacing a
 - Consumes: Public REST endpoints:
   - `https://openrouter.ai/api/frontend/v1/rankings/apps`
   - `https://openrouter.ai/api/frontend/v1/rankings/task-spend`
+  - `https://openrouter.ai/api/frontend/v1/rankings/session-cost`
 - Produces: `OpenRouterFrontendClient` (aliased as `OpenRouterWebCrawler` for backward compatibility) class with methods:
   - `fetch_apps() -> dict`: returns dictionary containing application rankings (`day`, `week`, `month`) including titles (e.g. Hermes Agent, Cline, Claude Code), categories (`cli-agent`, `ide-extension`), token totals, and request counts.
   - `fetch_task_spend() -> dict`: returns dictionary containing task-level spend & tokens share (`macroCategories`, `tasks`, `models` breakdown).
+  - `fetch_session_cost() -> dict`: returns dictionary containing typical coding-agent session costs by turn length (`harnesses`, `models`, `points: [{bucket, medianUsd}]`).
   - Non-fatal error handling: returns `{"status": "error"|"ok", "data": {}, "error": str}`.
 
-- [ ] **Step 1: Write failing test for frontend client (apps & task spend)**
+- [ ] **Step 1: Write failing test for frontend client (apps, task spend, session cost)**
 
 ```python
 # tests/test_crawler.py
@@ -435,6 +442,26 @@ SAMPLE_TASK_SPEND_PAYLOAD = {
     }
 }
 
+SAMPLE_SESSION_COST_PAYLOAD = {
+    "windowDays": 30,
+    "windowEnd": "2026-09-28T00:00:00.000Z",
+    "harnesses": [
+        {
+            "appId": 3067167,
+            "models": [
+                {
+                    "model": "meta-llama/llama-3.3-70b-instruct",
+                    "points": [
+                        {"bucket": "single", "medianUsd": 0.00021},
+                        {"bucket": "short", "medianUsd": 0.00041},
+                        {"bucket": "core", "medianUsd": 0.0083}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
 def test_crawler_init():
     crawler = OpenRouterWebCrawler()
     assert crawler.base_url == "https://openrouter.ai/api/frontend/v1/rankings"
@@ -470,6 +497,19 @@ def test_fetch_task_spend_success(mock_get):
     assert "classification" in result["data"]["tasks"]
 
 @patch("sources.openrouter.crawler.requests.get")
+def test_fetch_session_cost_success(mock_get):
+    mock_resp = MagicMock(status_code=200)
+    mock_resp.json.return_value = {"data": SAMPLE_SESSION_COST_PAYLOAD}
+    mock_get.return_value = mock_resp
+
+    crawler = OpenRouterWebCrawler()
+    result = crawler.fetch_session_cost()
+
+    assert result["status"] == "ok"
+    assert "harnesses" in result["data"]
+    assert result["data"]["harnesses"][0]["appId"] == 3067167
+
+@patch("sources.openrouter.crawler.requests.get")
 def test_fetch_error_graceful(mock_get):
     mock_resp = MagicMock(status_code=500, text="Internal Error")
     mock_get.return_value = mock_resp
@@ -495,7 +535,7 @@ import requests
 from typing import Dict, Any, List
 
 class OpenRouterWebCrawler:
-    """Client for OpenRouter frontend public leaderboards (apps and task-spend)."""
+    """Client for OpenRouter frontend public leaderboards (apps, task-spend, session-cost)."""
     def __init__(self, base_url: str = "https://openrouter.ai/api/frontend/v1/rankings", timeout: int = 20):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -513,7 +553,10 @@ class OpenRouterWebCrawler:
         try:
             resp = requests.get(url, headers=self.headers, timeout=self.timeout)
             if resp.status_code == 200:
-                return {"status": "ok", "data": resp.json()}
+                payload = resp.json()
+                # Some endpoints return {"data": ...}, unwrap if present
+                data = payload.get("data", payload) if isinstance(payload, dict) else payload
+                return {"status": "ok", "data": data}
             return {
                 "status": "error",
                 "error": f"HTTP {resp.status_code}: {resp.text[:200]}",
@@ -556,12 +599,16 @@ class OpenRouterWebCrawler:
     def fetch_task_spend(self) -> Dict[str, Any]:
         """Fetches 'Top models by task' spend and token distribution from frontend JSON API."""
         return self._fetch_json("task-spend")
+
+    def fetch_session_cost(self) -> Dict[str, Any]:
+        """Fetches 'Cost per session' across coding agents and session lengths from frontend JSON API."""
+        return self._fetch_json("session-cost")
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_crawler.py -v`
-Expected: PASS (4 passed)
+Expected: PASS (5 passed)
 
 - [ ] **Step 5: Commit**
 
@@ -646,6 +693,18 @@ def test_sync_task_spend_saves_file(tmp_path):
     content = json.loads(out_file.read_text())
     assert content["date"] == "2026-09-28"
     assert content["data"]["macroCategories"][0]["name"] == "General"
+
+def test_sync_session_cost_saves_file(tmp_path):
+    crawler = MagicMock()
+    crawler.fetch_session_cost.return_value = {
+        "status": "ok",
+        "data": {"harnesses": [{"appId": 3067167}]}
+    }
+    out_file = sync_session_cost(crawler, tmp_path, target_date="2026-09-28")
+    assert out_file.exists()
+    content = json.loads(out_file.read_text())
+    assert content["date"] == "2026-09-28"
+    assert content["data"]["harnesses"][0]["appId"] == 3067167
 
 def test_sync_models_saves_file(tmp_path):
     client = MagicMock()
@@ -842,6 +901,32 @@ def sync_task_spend(
         json.dump(snapshot, f, indent=2, ensure_ascii=False)
     return out_file
 
+def sync_session_cost(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    target_date: str,
+    force: bool = False
+) -> Path:
+    """Fetches and persists OpenRouter frontend Cost per session snapshot."""
+    sc_dir = data_dir / "session_cost"
+    sc_dir.mkdir(parents=True, exist_ok=True)
+    out_file = sc_dir / f"{target_date}.json"
+
+    if not force and is_valid_json_file(out_file):
+        return out_file
+
+    fetch_res = crawler.fetch_session_cost()
+    snapshot = {
+        "date": target_date,
+        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "status": fetch_res.get("status"),
+        "error": fetch_res.get("error"),
+        "data": fetch_res.get("data", {})
+    }
+    with out_file.open("w", encoding="utf-8") as f:
+        json.dump(snapshot, f, indent=2, ensure_ascii=False)
+    return out_file
+
 def sync_rankings_daily(
     client: OpenRouterClient,
     data_dir: Path,
@@ -917,7 +1002,7 @@ def run_sync(
     force: bool = False,
     only: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Orchestrates sync pipeline across models, apps, task_spend, and rankings_daily."""
+    """Orchestrates sync pipeline across models, apps, task_spend, session_cost, and rankings_daily."""
     today_utc = datetime.datetime.now(datetime.timezone.utc).date()
     yesterday_utc = today_utc - datetime.timedelta(days=1)
     today_str = today_utc.strftime("%Y-%m-%d")
@@ -941,7 +1026,12 @@ def run_sync(
         task_file = sync_task_spend(crawler, data_dir, today_str, force=force)
         results["task_spend"] = str(task_file)
 
-    # 4. Sync rankings daily (API)
+    # 4. Sync cost per session (Frontend API)
+    if only in (None, "session_cost"):
+        session_cost_file = sync_session_cost(crawler, data_dir, today_str, force=force)
+        results["session_cost"] = str(session_cost_file)
+
+    # 5. Sync rankings daily (API)
     if only in (None, "rankings"):
         if end_date:
             e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -1034,6 +1124,7 @@ def test_cli_main_executes_sync(mock_run_sync):
         "models": "data/openrouter/models/2026-09-28.json",
         "apps": "data/openrouter/apps/2026-09-28.json",
         "task_spend": "data/openrouter/task_spend/2026-09-28.json",
+        "session_cost": "data/openrouter/session_cost/2026-09-28.json",
         "rankings_daily": {"fetched_days": 2, "remaining_days": 0, "failed": []}
     }
     exit_code = main(["sync", "--lookback-days", "7"])
@@ -1096,9 +1187,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sync_parser.add_argument(
         "--only",
-        choices=["models", "rankings", "apps", "task_spend"],
+        choices=["models", "rankings", "apps", "task_spend", "session_cost"],
         default=None,
-        help="Sync only specified target (models, rankings, apps, or task_spend)"
+        help="Sync only specified target (models, rankings, apps, task_spend, or session_cost)"
     )
 
     return parser
@@ -1109,7 +1200,7 @@ def main(args: list = None) -> int:
 
     if parsed.command == "sync":
         api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key and parsed.only not in ("models", "apps", "task_spend"):
+        if not api_key and parsed.only not in ("models", "apps", "task_spend", "session_cost"):
             print("[Warning] OPENROUTER_API_KEY is not set. Rankings daily API calls will fail.")
 
         data_dir = Path(__file__).resolve().parent / "data" / "openrouter"
@@ -1133,6 +1224,8 @@ def main(args: list = None) -> int:
                 print(f"  - Apps snapshot: {results['apps']}")
             if "task_spend" in results:
                 print(f"  - Top models by task snapshot: {results['task_spend']}")
+            if "session_cost" in results:
+                print(f"  - Cost per session snapshot: {results['session_cost']}")
             if "rankings_daily" in results:
                 stats = results["rankings_daily"]
                 print(f"  - Daily rankings: fetched {stats['fetched_days']} days, remaining missing {stats['remaining_days']} days")

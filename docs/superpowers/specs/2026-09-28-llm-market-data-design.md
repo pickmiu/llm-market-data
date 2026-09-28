@@ -36,7 +36,8 @@ llm-market-data/
 │       ├── models/               # YYYY-MM-DD.json（模型元数据与定价快照，来自 API）
 │       ├── rankings_daily/       # YYYY-MM-DD.json（官方每日 Top 50 模型 Token 调用量明细，来自 API）
 │       ├── apps/                 # YYYY-MM-DD.json（Coding Agents / Apps 排行快照，来自公开前端 API）
-│       └── task_spend/           # YYYY-MM-DD.json（Top models by task: 各场景与任务份额快照，来自公开前端 API）
+│       ├── task_spend/           # YYYY-MM-DD.json（Top models by task: 各场景与任务份额快照，来自公开前端 API）
+│       └── session_cost/         # YYYY-MM-DD.json（Cost per session: 各 Coding Agent 会话轮次开销快照，来自公开前端 API）
 ├── deploy/
 │   └── cloudflare/
 │       ├── wrangler.toml         # Cloudflare Worker Cron Trigger 配置文件
@@ -107,7 +108,21 @@ llm-market-data/
   - `models`: 各任务下排名前列的模型标识、具体份额占比 (`share`) 与近期点位变动 (`deltaPp`)
 - **归档格式**：保存为每日完整快照 `data/openrouter/task_spend/YYYY-MM-DD.json`。
 
-### 3.5 幂等规则
+### 3.5 Coding Agent 会话开销快照：Cost Per Session (`session_cost/YYYY-MM-DD.json`)
+- **来源**：直接通过公开 REST 接口 `GET https://openrouter.ai/api/frontend/v1/rankings/session-cost` 获取纯 JSON（免鉴权）。
+- **指标含义**：展示主流 Coding Agent（Hermes Agent, Claude Code, Kilo Code, Codex 等）在不同会话长度下的单会话中位数花费（美元）。
+- **核心数据项**：
+  - `windowDays`: 统计时间窗口（默认最近 30 天）
+  - `windowEnd`: 统计窗口截止时间
+  - `harnesses`: 各 Coding Agent 运行容器（如 `appId`: 3067167 为 Hermes Agent，2627404 为 Claude Code，2262242 为 Kilo Code，2668297 为 Codex 等）
+    - `models`: 各支持模型的会话长度分桶开销数据：
+      - `single` (1 turn): 单轮交互典型开销
+      - `short` (2-9 turns): 短交互典型开销
+      - `core` (10-49 turns): 常规核心交互典型开销
+      - `long` (50+ turns): 深度长任务典型开销
+- **归档格式**：保存为每日完整快照 `data/openrouter/session_cost/YYYY-MM-DD.json`。
+
+### 3.6 幂等规则
 - 检查目标 JSON 文件：若已存在且为非空合法 JSON，直接跳过；
 - 支持传入 `--force` 参数以允许重新覆盖（例如手动强制刷新特定日期）。
 
