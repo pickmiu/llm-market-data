@@ -5,9 +5,9 @@
 本项目构建一个轻量、模块化、高可用的 LLM 市场数据自动采集与持久化系统。首期聚焦于 **OpenRouter** 数据生态，实现数据的自动归档、智能限流补抓与定时调度。
 
 ### 核心范围
-1. **多维度数据采集**：
-   - 官方 API 接口：获取模型元数据与定价快照（`/api/v1/models`）及高精度每日 Token 消耗排行（`/api/v1/datasets/rankings-daily`）。
-   - 网页轻量爬虫：抓取 OpenRouter 网页端公开排行榜（`https://openrouter.ai/rankings`）中的 SSR 数据（包括近期完整日、30 天滚动热度、异动模型）。
+1. **多维度数据采集（以接口为主，去重互补）**：
+   - **官方 API 接口（核心权威数据源）**：获取模型元数据与定价快照（`/api/v1/models`）及每日模型 Token 消耗排行（`/api/v1/datasets/rankings-daily`）。接口已有的模型数据绝不在网页端重复抓取。
+   - **网页轻量爬虫（仅抓取接口未开放的独有数据）**：仅抓取 OpenRouter 网页端公开的 **Apps 与 Coding Agents 排行**（如 Hermes Agent、Cline、Kilo Code 等应用维度的日/周/月 Token 与请求量排行榜），补全生态链数据。
 2. **全自动历史回溯与严格限流**：
    - 自动回溯至平台历史数据起点（官方数据集底线 2025-01-01），自动比对本地数据缺失日期并分批补齐。
    - 严格遵循 OpenRouter 速率限制（30 次/分钟、500 次/天），内置请求节流（2.5 秒/次）与指数退避重试，支持单次批次预算上限，天然支持断点续传。
@@ -28,14 +28,14 @@ llm-market-data/
 ├── sources/
 │   └── openrouter/
 │       ├── __init__.py
-│       ├── client.py             # OpenRouter API 及网页端爬虫封装（含鉴权与基础请求）
-│       ├── crawler.py            # 网页榜单提取器（解析 Next.js SSR 预渲染数据）
+│       ├── client.py             # OpenRouter API 客户端（models 与 rankings-daily，含节流与重试）
+│       ├── crawler.py            # 网页独有数据提取器（从 SSR 提取接口没有的 Apps/Agents 排行）
 │       └── sync.py               # 缺失日期扫描、限流配额控制与增量补抓调度引擎
 ├── data/                         # 持久化数据快照存储根目录
 │   └── openrouter/
-│       ├── models/               # YYYY-MM-DD.json（模型元数据与输入/输出定价快照）
-│       ├── rankings_daily/       # YYYY-MM-DD.json（官方每日 Top 50 模型 Token 调用量明细）
-│       └── web_rankings/         # YYYY-MM-DD.json（网页端排行榜单快照）
+│       ├── models/               # YYYY-MM-DD.json（模型元数据与输入/输出定价快照，来自 API）
+│       ├── rankings_daily/       # YYYY-MM-DD.json（官方每日 Top 50 模型 Token 调用量明细，来自 API）
+│       └── apps/                 # YYYY-MM-DD.json（网页独有的 Apps / Coding Agents 排行快照）
 ├── deploy/
 │   └── cloudflare/
 │       ├── wrangler.toml         # Cloudflare Worker Cron Trigger 配置文件
@@ -84,13 +84,19 @@ llm-market-data/
   }
   ```
 
-### 3.3 网页端榜单 (`web_rankings/YYYY-MM-DD.json`)
-- **来源**：爬取 `https://openrouter.ai/rankings` HTML 页面
-- **解析方式**：提取页面中 Next.js App Router 嵌入的 SSR 榜单数据
-- **存储内容**：
-  - `today`: 最近一个完整日（Most recent complete day）模型榜单
-  - `trailing_30_days`: 过去 30 天滑动窗口榜单
-  - `new_and_trending`: 过去 7 天对比前 7 天增幅榜单
+### 3.3 网页端独有快照：应用与 Agent 排行 (`apps/YYYY-MM-DD.json`)
+- **设计原则（去重互补）**：严格以官方 API 接口数据为基准；接口已有的模型排行数据绝不从网页端重复抓取。网页爬虫仅抓取接口未开放的生态层快照。
+- **数据来源**：抓取 `https://openrouter.ai/rankings` 页面中 Next.js App Router 注入的 `["rankings", "apps"]` 脱水数据。
+- **覆盖范围**：包含 `day`（日榜）、`week`（周榜）、`month`（月榜）三个维度的应用排行。
+- **核心数据项**：
+  - `rank`: 应用排名
+  - `app_id`: 应用唯一 ID
+  - `title`: 应用名称（例如 Hermes Agent、Cline、Kilo Code、Claude Code 等）
+  - `categories`: 分类标签（如 `personal-agent`, `cli-agent`, `ide-extension` 等，直接映射 Coding Agents 榜单）
+  - `total_tokens`: 该周期内处理的总 Token 数量
+  - `total_requests`: 调用总请求次数
+  - `description`: 工具简介描述
+- **容错隔离**：若网页爬取因 Cloudflare 反爬拦截，仅输出警告并跳过，绝不阻断核心 API 数据的持久化流程。
 
 ### 3.4 幂等规则
 - 检查目标 JSON 文件：若已存在且为非空合法 JSON，直接跳过；

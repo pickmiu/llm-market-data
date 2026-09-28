@@ -21,7 +21,7 @@
 - **Storage Paths**:
   - `data/openrouter/models/YYYY-MM-DD.json`
   - `data/openrouter/rankings_daily/YYYY-MM-DD.json`
-  - `data/openrouter/web_rankings/YYYY-MM-DD.json`
+  - `data/openrouter/apps/YYYY-MM-DD.json`
 - **Scheduler Cron**: `30 0 * * *` (UTC 00:30, Beijing 08:30).
 - **Git Push Rule**: Agent must NEVER automatically push to remote Git repository without explicit confirmation from the human partner.
 
@@ -45,7 +45,7 @@
 - Create: `sources/openrouter/__init__.py`
 - Create: `data/openrouter/models/.gitkeep`
 - Create: `data/openrouter/rankings_daily/.gitkeep`
-- Create: `data/openrouter/web_rankings/.gitkeep`
+- Create: `data/openrouter/apps/.gitkeep`
 - Test: `tests/test_scaffold.py`
 
 **Interfaces:**
@@ -66,7 +66,7 @@ def test_project_structure():
     assert (root / "sources" / "openrouter" / "__init__.py").exists()
     assert (root / "data" / "openrouter" / "models").is_dir()
     assert (root / "data" / "openrouter" / "rankings_daily").is_dir()
-    assert (root / "data" / "openrouter" / "web_rankings").is_dir()
+    assert (root / "data" / "openrouter" / "apps").is_dir()
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -86,7 +86,6 @@ pytest>=8.0.0
 2. Create `.env.example`:
 ```bash
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-LOOKBACK_DAYS=90
 MAX_REQUESTS_PER_RUN=40
 ```
 
@@ -109,12 +108,12 @@ node_modules/
 mkdir -p sources/openrouter
 mkdir -p data/openrouter/models
 mkdir -p data/openrouter/rankings_daily
-mkdir -p data/openrouter/web_rankings
+mkdir -p data/openrouter/apps
 touch sources/__init__.py
 touch sources/openrouter/__init__.py
 touch data/openrouter/models/.gitkeep
 touch data/openrouter/rankings_daily/.gitkeep
-touch data/openrouter/web_rankings/.gitkeep
+touch data/openrouter/apps/.gitkeep
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -372,7 +371,7 @@ git commit -m "feat(sources): implement OpenRouter API client with rate pacing a
 
 ---
 
-### Task 3: OpenRouter Web Rankings Crawler
+### Task 3: OpenRouter Web Apps & Coding Agents Crawler
 
 **Files:**
 - Create: `sources/openrouter/crawler.py`
@@ -381,41 +380,20 @@ git commit -m "feat(sources): implement OpenRouter API client with rate pacing a
 **Interfaces:**
 - Consumes: Public URL `https://openrouter.ai/rankings`.
 - Produces: `OpenRouterWebCrawler` class with method:
-  - `crawl_rankings() -> dict`: returns dictionary containing parsed tables: `today`, `trailing_30_days`, `new_and_trending`.
-  - Non-fatal error handling: returns `{"error": str, "tables": {}}` when blocked by anti-bot.
+  - `crawl_apps() -> dict`: returns dictionary containing parsed application rankings (`day`, `week`, `month`) including titles (e.g. Hermes Agent, Cline, Claude Code), categories (`cli-agent`, `ide-extension`), token totals, and request counts.
+  - Non-fatal error handling: returns `{"status": "blocked"|"error", "apps": {}, "error": str}`.
 
-- [ ] **Step 1: Write failing test for web crawler**
+- [ ] **Step 1: Write failing test for apps crawler**
 
 ```python
 # tests/test_crawler.py
 from unittest.mock import patch, MagicMock
 from sources.openrouter.crawler import OpenRouterWebCrawler
 
-SAMPLE_SSR_HTML = """
+SAMPLE_SSR_PAYLOAD_HTML = """
 <html>
 <body>
-<div hidden id="S:3">
-<div class="sr-only">
-<h3>Top models today, as text</h3>
-<p>Text summary of the Today tab of the leaderboard above.</p>
-<table>
-<thead><tr><th>Rank</th><th>Model</th><th>Author</th><th>Tokens</th><th>Change</th></tr></thead>
-<tbody>
-<tr><td>1</td><td>z-ai/glm-5</td><td>z-ai</td><td>57.5T</td><td>+10%</td></tr>
-<tr><td>2</td><td>openai/gpt-4o</td><td>openai</td><td>40T</td><td>-5%</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sr-only">
-<h3>Top models this month, as text</h3>
-<p>Text summary of the This Month tab of the leaderboard above. Models are ranked by tokens processed on OpenRouter over the trailing thirty days.</p>
-<table>
-<tbody>
-<tr><td>1</td><td>anthropic/claude-3.5-sonnet</td><td>anthropic</td><td>100T</td><td>+20%</td></tr>
-</tbody>
-</table>
-</div>
+<script>self.__next_f.push([1,"33:[\\"$\\",\\"div\\",null,{\\"state\\":{\\"mutations\\":[],\\"queries\\":[{\\"dehydratedAt\\":1790573839284,\\"state\\":{\\"data\\":{\\"day\\":[{\\"app_id\\":3067167,\\"total_tokens\\":\\"1729210473166\\",\\"total_requests\\":18124609,\\"rank\\":2,\\"app\\":{\\"categories\\":[\\"personal-agent\\",\\"cli-agent\\"],\\"created_at\\":\\"2026-03-12T23:26:33.624Z\\",\\"description\\":\\"Hermes Agent is an open-source AI agent\\",\\"id\\":3067167,\\"slug\\":\\"hermes-agent\\",\\"title\\":\\"Hermes Agent\\"}},{\\"app_id\\":190604,\\"total_tokens\\":\\"926893776688\\",\\"total_requests\\":5781615,\\"rank\\":3,\\"app\\":{\\"categories\\":[\\"ide-extension\\",\\"cli-agent\\"],\\"created_at\\":\\"2024-10-09T07:53:24.932Z\\",\\"description\\":\\"Cline is an open-source AI coding agent\\",\\"id\\":190604,\\"slug\\":\\"cline\\",\\"title\\":\\"Cline\\"}}],\\"week\\":[],\\"month\\":[]},\\"dataUpdateCount\\":1},\\"queryKey\\":[\\"rankings\\",\\"apps\\"]}]}}]\n"])</script>
 </body>
 </html>
 """
@@ -425,31 +403,31 @@ def test_crawler_init():
     assert crawler.url == "https://openrouter.ai/rankings"
 
 @patch("sources.openrouter.crawler.requests.get")
-def test_crawl_rankings_success(mock_get):
-    mock_resp = MagicMock(status_code=200, text=SAMPLE_SSR_HTML)
+def test_crawl_apps_success(mock_get):
+    mock_resp = MagicMock(status_code=200, text=SAMPLE_SSR_PAYLOAD_HTML)
     mock_get.return_value = mock_resp
 
     crawler = OpenRouterWebCrawler()
-    result = crawler.crawl_rankings()
+    result = crawler.crawl_apps()
 
     assert result["status"] == "ok"
-    assert "today" in result["tables"]
-    assert len(result["tables"]["today"]) == 2
-    assert result["tables"]["today"][0]["model"] == "z-ai/glm-5"
-    assert result["tables"]["today"][0]["tokens"] == "57.5T"
-    assert "trailing_30_days" in result["tables"]
-    assert result["tables"]["trailing_30_days"][0]["author"] == "anthropic"
+    assert "day" in result["apps"]
+    assert len(result["apps"]["day"]) == 2
+    assert result["apps"]["day"][0]["title"] == "Hermes Agent"
+    assert result["apps"]["day"][0]["total_tokens"] == "1729210473166"
+    assert "cli-agent" in result["apps"]["day"][0]["categories"]
+    assert result["apps"]["day"][1]["title"] == "Cline"
 
 @patch("sources.openrouter.crawler.requests.get")
-def test_crawl_rankings_cloudflare_blocked_graceful(mock_get):
+def test_crawl_apps_cloudflare_blocked_graceful(mock_get):
     mock_resp = MagicMock(status_code=403, text="<html>Cloudflare Challenge</html>")
     mock_get.return_value = mock_resp
 
     crawler = OpenRouterWebCrawler()
-    result = crawler.crawl_rankings()
+    result = crawler.crawl_apps()
 
     assert result["status"] == "blocked"
-    assert result["tables"] == {}
+    assert result["apps"] == {}
     assert "error" in result
 ```
 
@@ -463,6 +441,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sources.openrouter.cr
 ```python
 # sources/openrouter/crawler.py
 import re
+import json
 import requests
 from typing import Dict, Any, List
 
@@ -480,65 +459,74 @@ class OpenRouterWebCrawler:
             "Accept-Language": "en-US,en;q=0.9"
         }
 
-    def _parse_table_rows(self, table_html: str) -> List[Dict[str, str]]:
-        rows = []
-        tr_matches = re.findall(r'<tr[^>]*>(.*?)</tr>', table_html, re.DOTALL | re.IGNORECASE)
-        for tr in tr_matches:
-            tds = re.findall(r'<td[^>]*>(.*?)</td>', tr, re.DOTALL | re.IGNORECASE)
-            if len(tds) >= 4:
-                clean_tds = [re.sub(r'<[^>]+>', '', td).strip() for td in tds]
-                row_data = {
-                    "rank": clean_tds[0] if len(clean_tds) > 0 else "",
-                    "model": clean_tds[1] if len(clean_tds) > 1 else "",
-                    "author": clean_tds[2] if len(clean_tds) > 2 else "",
-                    "tokens": clean_tds[3] if len(clean_tds) > 3 else "",
-                    "change": clean_tds[4] if len(clean_tds) > 4 else ""
-                }
-                rows.append(row_data)
-        return rows
-
-    def crawl_rankings(self) -> Dict[str, Any]:
-        """Scrapes web leaderboard tables from SSR embedded HTML."""
+    def crawl_apps(self) -> Dict[str, Any]:
+        """Scrapes Apps and Coding Agents leaderboard from SSR React Query state."""
         try:
             resp = requests.get(self.url, headers=self.headers, timeout=self.timeout)
             if resp.status_code != 200:
                 return {
                     "status": "blocked" if resp.status_code in (403, 503) else "error",
                     "error": f"HTTP {resp.status_code}",
-                    "tables": {}
+                    "apps": {}
                 }
 
             html = resp.text
-            tables = {}
+            chunks = re.findall(r'self\.__next_f\.push\(\[\d+,\"(.*)\"\]\)', html)
+            full_payload = ''.join(chunks).encode('utf-8').decode('unicode_escape', errors='ignore')
 
-            # Pattern for Today tab
-            today_match = re.search(r'Top models today, as text.*?<table[^>]*>(.*?)</table>', html, re.DOTALL | re.IGNORECASE)
-            if today_match:
-                tables["today"] = self._parse_table_rows(today_match.group(1))
+            apps_match = re.search(
+                r'\"state\":\{\"data\":(\{.*?\}(?=,\"dataUpdateCount\")),\"dataUpdateCount\"[^\}]*\},\"queryKey\":\[\"rankings\",\"apps\"\]',
+                full_payload
+            )
+            if not apps_match:
+                apps_match = re.search(r'\"queryKey\":\[\"rankings\",\"apps\"\].*?\"data\":(\{.*?\})', full_payload)
 
-            # Pattern for This Month tab (trailing thirty days)
-            month_match = re.search(r'Top models this month, as text.*?<table[^>]*>(.*?)</table>', html, re.DOTALL | re.IGNORECASE)
-            if month_match:
-                tables["trailing_30_days"] = self._parse_table_rows(month_match.group(1))
-
-            # Pattern for New & Trending tab
-            trending_match = re.search(r'New &amp; Trending tab.*?<table[^>]*>(.*?)</table>', html, re.DOTALL | re.IGNORECASE)
-            if trending_match:
-                tables["new_and_trending"] = self._parse_table_rows(trending_match.group(1))
+            if apps_match:
+                raw_apps = json.loads(apps_match.group(1))
+                cleaned_apps: Dict[str, List[Dict[str, Any]]] = {}
+                for view in ("day", "week", "month"):
+                    cleaned_apps[view] = []
+                    for item in raw_apps.get(view, []):
+                        app_obj = item.get("app", {})
+                        cleaned_apps[view].append({
+                            "rank": item.get("rank"),
+                            "app_id": item.get("app_id"),
+                            "title": app_obj.get("title"),
+                            "slug": app_obj.get("slug"),
+                            "categories": app_obj.get("categories", []),
+                            "total_tokens": item.get("total_tokens"),
+                            "total_requests": item.get("total_requests"),
+                            "description": app_obj.get("description")
+                        })
+                return {
+                    "status": "ok",
+                    "apps": cleaned_apps
+                }
 
             return {
-                "status": "ok",
-                "tables": tables
+                "status": "error",
+                "error": "Could not find apps payload in SSR state",
+                "apps": {}
             }
         except Exception as exc:
             return {
                 "status": "error",
                 "error": str(exc),
-                "tables": {}
+                "apps": {}
             }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
+
+Run: `pytest tests/test_crawler.py -v`
+Expected: PASS (3 passed)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add sources/openrouter/crawler.py tests/test_crawler.py
+git commit -m "feat(sources): implement OpenRouter SSR apps and coding agents crawler"
+```
 
 Run: `pytest tests/test_crawler.py -v`
 Expected: PASS (3 passed)
@@ -602,6 +590,18 @@ def test_group_dates_into_ranges():
     dates = ["2025-01-01", "2025-01-02", "2025-01-03", "2025-01-10", "2025-01-11"]
     ranges = group_dates_into_ranges(dates, max_span_days=5)
     assert ranges == [("2025-01-01", "2025-01-03"), ("2025-01-10", "2025-01-11")]
+
+def test_sync_apps_saves_file(tmp_path):
+    crawler = MagicMock()
+    crawler.crawl_apps.return_value = {
+        "status": "ok",
+        "apps": {"day": [{"title": "Hermes Agent", "rank": 2}]}
+    }
+    out_file = sync_apps(crawler, tmp_path, target_date="2026-09-28")
+    assert out_file.exists()
+    content = json.loads(out_file.read_text())
+    assert content["date"] == "2026-09-28"
+    assert content["data"]["day"][0]["title"] == "Hermes Agent"
 
 def test_sync_models_saves_file(tmp_path):
     client = MagicMock()
@@ -746,27 +746,27 @@ def sync_models(
         json.dump(snapshot, f, indent=2, ensure_ascii=False)
     return out_file
 
-def sync_web_rankings(
+def sync_apps(
     crawler: OpenRouterWebCrawler,
     data_dir: Path,
     target_date: str,
     force: bool = False
 ) -> Path:
-    """Fetches and persists OpenRouter SSR web rankings snapshot."""
-    web_dir = data_dir / "web_rankings"
-    web_dir.mkdir(parents=True, exist_ok=True)
-    out_file = web_dir / f"{target_date}.json"
+    """Fetches and persists OpenRouter SSR Apps & Coding Agents leaderboard snapshot."""
+    apps_dir = data_dir / "apps"
+    apps_dir.mkdir(parents=True, exist_ok=True)
+    out_file = apps_dir / f"{target_date}.json"
 
     if not force and is_valid_json_file(out_file):
         return out_file
 
-    crawl_res = crawler.crawl_rankings()
+    crawl_res = crawler.crawl_apps()
     snapshot = {
         "date": target_date,
         "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "status": crawl_res.get("status"),
         "error": crawl_res.get("error"),
-        "tables": crawl_res.get("tables", {})
+        "data": crawl_res.get("apps", {})
     }
     with out_file.open("w", encoding="utf-8") as f:
         json.dump(snapshot, f, indent=2, ensure_ascii=False)
@@ -847,7 +847,7 @@ def run_sync(
     force: bool = False,
     only: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Orchestrates sync pipeline across models, web_rankings, and rankings_daily."""
+    """Orchestrates sync pipeline across models, apps, and rankings_daily."""
     today_utc = datetime.datetime.now(datetime.timezone.utc).date()
     yesterday_utc = today_utc - datetime.timedelta(days=1)
     today_str = today_utc.strftime("%Y-%m-%d")
@@ -856,17 +856,17 @@ def run_sync(
     crawler = OpenRouterWebCrawler()
     results = {}
 
-    # 1. Sync models
+    # 1. Sync models (API)
     if only in (None, "models"):
         models_file = sync_models(client, data_dir, today_str, force=force)
         results["models"] = str(models_file)
 
-    # 2. Sync web rankings
-    if only in (None, "web"):
-        web_file = sync_web_rankings(crawler, data_dir, today_str, force=force)
-        results["web_rankings"] = str(web_file)
+    # 2. Sync apps & coding agents (Web Crawler)
+    if only in (None, "apps"):
+        apps_file = sync_apps(crawler, data_dir, today_str, force=force)
+        results["apps"] = str(apps_file)
 
-    # 3. Sync rankings daily
+    # 3. Sync rankings daily (API)
     if only in (None, "rankings"):
         if end_date:
             e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -944,19 +944,20 @@ def test_cli_parser_custom_args():
         "--start-date", "2026-08-01",
         "--end-date", "2026-08-31",
         "--force",
-        "--only", "rankings"
+        "--only", "apps"
     ])
     assert args.lookback_days == 30
     assert args.max_requests == 20
     assert args.start_date == "2026-08-01"
     assert args.end_date == "2026-08-31"
     assert args.force is True
-    assert args.only == "rankings"
+    assert args.only == "apps"
 
 @patch("cli.run_sync")
 def test_cli_main_executes_sync(mock_run_sync):
     mock_run_sync.return_value = {
         "models": "data/openrouter/models/2026-09-28.json",
+        "apps": "data/openrouter/apps/2026-09-28.json",
         "rankings_daily": {"fetched_days": 2, "remaining_days": 0, "failed": []}
     }
     exit_code = main(["sync", "--lookback-days", "7"])
@@ -1019,9 +1020,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sync_parser.add_argument(
         "--only",
-        choices=["models", "rankings", "web"],
+        choices=["models", "rankings", "apps"],
         default=None,
-        help="Sync only specified target (models, rankings, or web)"
+        help="Sync only specified target (models, rankings, or apps)"
     )
 
     return parser
@@ -1037,7 +1038,7 @@ def main(args: list = None) -> int:
 
         data_dir = Path(__file__).resolve().parent / "data" / "openrouter"
 
-        print(f"[*] Starting OpenRouter sync (lookback: {parsed.lookback_days}d, max_requests: {parsed.max_requests})...")
+        print(f"[*] Starting OpenRouter sync (lookback: {parsed.lookback_days}, max_requests: {parsed.max_requests})...")
         try:
             results = run_sync(
                 data_dir=data_dir,
@@ -1052,11 +1053,11 @@ def main(args: list = None) -> int:
             print("[+] Sync completed successfully:")
             if "models" in results:
                 print(f"  - Models snapshot: {results['models']}")
-            if "web_rankings" in results:
-                print(f"  - Web rankings snapshot: {results['web_rankings']}")
+            if "apps" in results:
+                print(f"  - Apps snapshot: {results['apps']}")
             if "rankings_daily" in results:
                 stats = results["rankings_daily"]
-                print(f"  - Daily rankings: fetched {stats['fetched']} days, remaining missing {stats['remaining']} days")
+                print(f"  - Daily rankings: fetched {stats['fetched_days']} days, remaining missing {stats['remaining_days']} days")
                 if stats["failed"]:
                     print(f"  - Failed items: {stats['failed']}")
             return 0
