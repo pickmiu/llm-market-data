@@ -162,3 +162,29 @@ def test_run_sync_selective(tmp_path):
         assert "rankings_daily" not in res
         assert (tmp_path / "performance").is_dir()
 
+def test_sync_crawler_error_does_not_save_file(tmp_path):
+    crawler = MagicMock()
+    crawler.fetch_apps.return_value = {"status": "error", "error": "500 Internal Error", "data": {}}
+    out = sync_apps(crawler, tmp_path, target_date="2026-09-28")
+    assert out is None
+    assert not (tmp_path / "apps" / "2026-09-28.json").exists()
+
+def test_sync_rankings_daily_skips_dates_without_data(tmp_path):
+    client = MagicMock()
+    client.get_rankings_daily.return_value = {
+        "data": [
+            {"date": "2026-09-27", "model_permaslug": "openai/gpt-4o", "total_tokens": 200}
+        ],
+        "asOf": "2026-09-28T00:00:00Z"
+    }
+
+    # 2026-09-26 has no records returned
+    missing_dates = ["2026-09-27", "2026-09-26"]
+    stats = sync_rankings_daily(client, tmp_path, missing_dates, max_requests=1, chunk_size=2)
+
+    assert stats["fetched_days"] == 1
+    assert (tmp_path / "rankings_daily" / "2026-09-27.json").exists()
+    # 2026-09-26 must NOT be created as empty file so it stays missing
+    assert not (tmp_path / "rankings_daily" / "2026-09-26.json").exists()
+
+

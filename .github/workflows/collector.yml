@@ -15,16 +15,21 @@ on:
         description: 'Optional: OpenRouter API key passed dynamically from scheduler or trigger'
         required: false
         default: ''
-  schedule:
-    # Secondary backup trigger: 01:30 UTC daily
-    - cron: '30 1 * * *'
+  # schedule:
+  #   # Secondary backup trigger: 01:30 UTC daily (commented to avoid duplicate daily runs with Cloudflare Worker)
+  #   - cron: '30 1 * * *'
 
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   collect:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -44,21 +49,25 @@ jobs:
 
       - name: Mask sensitive input
         if: ${{ github.event.inputs.openrouter_api_key != '' }}
-        run: echo "::add-mask::${{ github.event.inputs.openrouter_api_key }}"
+        env:
+          DISPATCH_KEY: ${{ github.event.inputs.openrouter_api_key }}
+        run: echo "::add-mask::$DISPATCH_KEY"
 
       - name: Run data synchronization
         env:
           INPUT_KEY: ${{ github.event.inputs.openrouter_api_key }}
           SECRET_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days }}
+          MAX_REQUESTS: ${{ github.event.inputs.max_requests || '40' }}
         run: |
           export OPENROUTER_API_KEY="${INPUT_KEY:-$SECRET_KEY}"
           LOOKBACK_FLAG=""
-          if [ -n "${{ github.event.inputs.lookback_days }}" ]; then
-            LOOKBACK_FLAG="--lookback-days ${{ github.event.inputs.lookback_days }}"
+          if [ -n "$LOOKBACK_DAYS" ]; then
+            LOOKBACK_FLAG="--lookback-days $LOOKBACK_DAYS"
           fi
           python cli.py sync \
             $LOOKBACK_FLAG \
-            --max-requests "${{ github.event.inputs.max_requests || '40' }}"
+            --max-requests "$MAX_REQUESTS"
 
       - name: Commit and push changes
         run: |

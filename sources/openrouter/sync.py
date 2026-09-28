@@ -1,4 +1,5 @@
 import json
+import logging
 import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
@@ -89,135 +90,83 @@ def sync_models(
         json.dump(snapshot, f, indent=2, ensure_ascii=False)
     return out_file
 
+def _sync_frontend_snapshot(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    subdir: str,
+    fetch_fn,
+    target_date: str,
+    force: bool = False,
+    default_data: Any = None
+) -> Optional[Path]:
+    """Fetches and persists a frontend leaderboard snapshot only on successful response."""
+    out_dir = data_dir / subdir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / f"{target_date}.json"
+
+    if not force and is_valid_json_file(out_file):
+        return out_file
+
+    fetch_res = fetch_fn()
+    if fetch_res.get("status") != "ok":
+        logging.warning("Skipping snapshot for %s/%s due to fetch error: %s", subdir, target_date, fetch_res.get("error"))
+        return None
+
+    snapshot = {
+        "date": target_date,
+        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "status": fetch_res.get("status"),
+        "error": None,
+        "data": fetch_res.get("data", {} if default_data is None else default_data)
+    }
+    with out_file.open("w", encoding="utf-8") as f:
+        json.dump(snapshot, f, indent=2, ensure_ascii=False)
+    return out_file
+
 def sync_apps(
     crawler: OpenRouterWebCrawler,
     data_dir: Path,
     target_date: str,
     force: bool = False
-) -> Path:
+) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Apps & Coding Agents leaderboard snapshot."""
-    apps_dir = data_dir / "apps"
-    apps_dir.mkdir(parents=True, exist_ok=True)
-    out_file = apps_dir / f"{target_date}.json"
-
-    if not force and is_valid_json_file(out_file):
-        return out_file
-
-    fetch_res = crawler.fetch_apps()
-    snapshot = {
-        "date": target_date,
-        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "status": fetch_res.get("status"),
-        "error": fetch_res.get("error"),
-        "data": fetch_res.get("data", {})
-    }
-    with out_file.open("w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2, ensure_ascii=False)
-    return out_file
+    return _sync_frontend_snapshot(crawler, data_dir, "apps", crawler.fetch_apps, target_date, force, default_data={})
 
 def sync_task_spend(
     crawler: OpenRouterWebCrawler,
     data_dir: Path,
     target_date: str,
     force: bool = False
-) -> Path:
+) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Top Models by Task spend snapshot."""
-    task_dir = data_dir / "task_spend"
-    task_dir.mkdir(parents=True, exist_ok=True)
-    out_file = task_dir / f"{target_date}.json"
-
-    if not force and is_valid_json_file(out_file):
-        return out_file
-
-    fetch_res = crawler.fetch_task_spend()
-    snapshot = {
-        "date": target_date,
-        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "status": fetch_res.get("status"),
-        "error": fetch_res.get("error"),
-        "data": fetch_res.get("data", {})
-    }
-    with out_file.open("w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2, ensure_ascii=False)
-    return out_file
+    return _sync_frontend_snapshot(crawler, data_dir, "task_spend", crawler.fetch_task_spend, target_date, force, default_data={})
 
 def sync_session_cost(
     crawler: OpenRouterWebCrawler,
     data_dir: Path,
     target_date: str,
     force: bool = False
-) -> Path:
+) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Cost per session snapshot."""
-    sc_dir = data_dir / "session_cost"
-    sc_dir.mkdir(parents=True, exist_ok=True)
-    out_file = sc_dir / f"{target_date}.json"
-
-    if not force and is_valid_json_file(out_file):
-        return out_file
-
-    fetch_res = crawler.fetch_session_cost()
-    snapshot = {
-        "date": target_date,
-        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "status": fetch_res.get("status"),
-        "error": fetch_res.get("error"),
-        "data": fetch_res.get("data", {})
-    }
-    with out_file.open("w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2, ensure_ascii=False)
-    return out_file
+    return _sync_frontend_snapshot(crawler, data_dir, "session_cost", crawler.fetch_session_cost, target_date, force, default_data={})
 
 def sync_benchmarks(
     crawler: OpenRouterWebCrawler,
     data_dir: Path,
     target_date: str,
     force: bool = False
-) -> Path:
+) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Benchmarks snapshot."""
-    bm_dir = data_dir / "benchmarks"
-    bm_dir.mkdir(parents=True, exist_ok=True)
-    out_file = bm_dir / f"{target_date}.json"
-
-    if not force and is_valid_json_file(out_file):
-        return out_file
-
-    fetch_res = crawler.fetch_benchmarks()
-    snapshot = {
-        "date": target_date,
-        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "status": fetch_res.get("status"),
-        "error": fetch_res.get("error"),
-        "data": fetch_res.get("data", {})
-    }
-    with out_file.open("w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2, ensure_ascii=False)
-    return out_file
+    return _sync_frontend_snapshot(crawler, data_dir, "benchmarks", crawler.fetch_benchmarks, target_date, force, default_data={})
 
 def sync_performance(
     crawler: OpenRouterWebCrawler,
     data_dir: Path,
     target_date: str,
     force: bool = False
-) -> Path:
+) -> Optional[Path]:
     """Fetches and persists OpenRouter frontend Fastest models (performance) snapshot."""
-    perf_dir = data_dir / "performance"
-    perf_dir.mkdir(parents=True, exist_ok=True)
-    out_file = perf_dir / f"{target_date}.json"
-
-    if not force and is_valid_json_file(out_file):
-        return out_file
-
-    fetch_res = crawler.fetch_performance()
-    snapshot = {
-        "date": target_date,
-        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "status": fetch_res.get("status"),
-        "error": fetch_res.get("error"),
-        "data": fetch_res.get("data", [])
-    }
-    with out_file.open("w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2, ensure_ascii=False)
-    return out_file
+    return _sync_frontend_snapshot(crawler, data_dir, "performance", crawler.fetch_performance, target_date, force, default_data=[])
 
 def sync_rankings_daily(
     client: OpenRouterClient,
@@ -259,12 +208,14 @@ def sync_rankings_daily(
             while curr <= e_dt:
                 d_str = curr.strftime("%Y-%m-%d")
                 out_file = rankings_dir / f"{d_str}.json"
-                if force or not is_valid_json_file(out_file):
+                day_rows = by_date.get(d_str)
+                # Only persist and count if data was actually returned for this date
+                if day_rows and (force or not is_valid_json_file(out_file)):
                     day_snapshot = {
                         "date": d_str,
                         "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                         "as_of": as_of,
-                        "data": by_date.get(d_str, [])
+                        "data": day_rows
                     }
                     with out_file.open("w", encoding="utf-8") as f:
                         json.dump(day_snapshot, f, indent=2, ensure_ascii=False)
@@ -274,7 +225,7 @@ def sync_rankings_daily(
             requests_made += 1
         except OpenRouterAPIError as exc:
             failed.append({"range": f"{start_d}..{end_d}", "error": str(exc)})
-            break
+            continue
 
     remaining_days = max(0, len(missing_dates) - fetched_days)
     return {
@@ -306,32 +257,38 @@ def run_sync(
     # 1. Sync models (API)
     if only in (None, "models"):
         models_file = sync_models(client, data_dir, today_str, force=force)
-        results["models"] = str(models_file)
+        if models_file:
+            results["models"] = str(models_file)
 
     # 2. Sync apps & coding agents (Frontend API)
     if only in (None, "apps"):
         apps_file = sync_apps(crawler, data_dir, today_str, force=force)
-        results["apps"] = str(apps_file)
+        if apps_file:
+            results["apps"] = str(apps_file)
 
     # 3. Sync top models by task (Frontend API)
     if only in (None, "task_spend"):
         task_file = sync_task_spend(crawler, data_dir, today_str, force=force)
-        results["task_spend"] = str(task_file)
+        if task_file:
+            results["task_spend"] = str(task_file)
 
     # 4. Sync cost per session (Frontend API)
     if only in (None, "session_cost"):
         session_cost_file = sync_session_cost(crawler, data_dir, today_str, force=force)
-        results["session_cost"] = str(session_cost_file)
+        if session_cost_file:
+            results["session_cost"] = str(session_cost_file)
 
     # 5. Sync benchmarks (Frontend API)
     if only in (None, "benchmarks"):
         benchmarks_file = sync_benchmarks(crawler, data_dir, today_str, force=force)
-        results["benchmarks"] = str(benchmarks_file)
+        if benchmarks_file:
+            results["benchmarks"] = str(benchmarks_file)
 
     # 6. Sync performance (Frontend API)
     if only in (None, "performance"):
         perf_file = sync_performance(crawler, data_dir, today_str, force=force)
-        results["performance"] = str(perf_file)
+        if perf_file:
+            results["performance"] = str(perf_file)
 
     # 7. Sync rankings daily (API)
     if only in (None, "rankings"):

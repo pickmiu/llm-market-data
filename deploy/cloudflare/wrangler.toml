@@ -1,6 +1,16 @@
 name = "llm-market-data-scheduler"
 main = "worker.js"
-compatibility_date = "2026-09-28"
+compatibility_date = "2026-09-01"
+
+[vars]
+# GITHUB_OWNER = "your-org"
+# GITHUB_REPO = "your-repo"
+
+# Secrets should be set via wrangler CLI:
+# wrangler secret put GITHUB_PAT
+# wrangler secret put OPENROUTER_API_KEY (optional, falls back to GitHub Secrets)
 
 [triggers]
+# Primary daily trigger at 00:30 UTC (08:30 Beijing)
 crons = ["30 0 * * *"]
+

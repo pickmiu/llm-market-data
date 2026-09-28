@@ -7,12 +7,16 @@ export default {
     const maxRequests = env.MAX_REQUESTS_PER_RUN || "40";
 
     if (!owner || !repo || !pat) {
-      console.error("Missing required env vars: GITHUB_OWNER, GITHUB_REPO, GITHUB_PAT");
-      return;
+      const missing = [];
+      if (!owner) missing.push("GITHUB_OWNER");
+      if (!repo) missing.push("GITHUB_REPO");
+      if (!pat) missing.push("GITHUB_PAT");
+      throw new Error(`Missing required env vars: ${missing.join(", ")}`);
     }
 
+    const branch = env.GITHUB_REF || "main";
     const payload = {
-      ref: "main",
+      ref: branch,
       inputs: {
         max_requests: maxRequests
       }
@@ -25,21 +29,26 @@ export default {
     }
 
     const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${pat}`,
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "CF-Worker-Market-Scheduler"
-      },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${pat}`,
+          "Accept": "application/vnd.github.v3+json",
+          "User-Agent": "CF-Worker-Market-Scheduler"
+        },
+        body: JSON.stringify(payload)
+      });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`Failed to dispatch GitHub workflow: HTTP ${response.status} - ${errText}`);
-    } else {
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Failed to dispatch GitHub workflow: HTTP ${response.status} - ${errText}`);
+      }
+
       console.log(`Successfully triggered ${workflowFile} on ${owner}/${repo}`);
+    } catch (err) {
+      console.error(`Dispatch error: ${err.message}`);
+      throw err;
     }
   }
 };
