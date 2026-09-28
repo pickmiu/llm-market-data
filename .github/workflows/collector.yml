@@ -66,5 +66,6 @@ jobs:
             echo "No data changes detected. Skipping commit."
           else
             git commit -m "chore(data): auto-sync openrouter market data [skip ci]"
+            git pull --rebase origin main
             git push origin main
           fi
