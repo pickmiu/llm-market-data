@@ -1,0 +1,6 @@
+name = "llm-market-data-scheduler"
+main = "worker.js"
+compatibility_date = "2026-09-28"
+
+[triggers]
+crons = ["30 0 * * *"]
