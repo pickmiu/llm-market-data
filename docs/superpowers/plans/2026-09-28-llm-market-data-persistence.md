@@ -22,6 +22,7 @@
   - `data/openrouter/models/YYYY-MM-DD.json`
   - `data/openrouter/rankings_daily/YYYY-MM-DD.json`
   - `data/openrouter/apps/YYYY-MM-DD.json`
+  - `data/openrouter/task_spend/YYYY-MM-DD.json`
 - **Scheduler Cron**: `30 0 * * *` (UTC 00:30, Beijing 08:30).
 - **Git Push Rule**: Agent must NEVER automatically push to remote Git repository without explicit confirmation from the human partner.
 
@@ -29,7 +30,7 @@
 
 1. **429 Rate Limit Exhaustion**: When OpenRouter returns HTTP 429 across all retries, the sync process must gracefully save all prior successful downloads, log an informative warning, and exit cleanly without corrupting existing JSON files.
 2. **Corrupted or 0-Byte JSON Files**: If a previous run left a 0-byte or malformed `.json` file in `data/`, the scanner must treat it as missing rather than skipping it.
-3. **Cloudflare Bot Challenge on Web Rankings**: If `https://openrouter.ai/rankings` crawler receives an anti-bot challenge (e.g. 403 or non-JSON HTML), it must log a non-fatal warning and allow the primary API `/models` and `/rankings-daily` workflows to succeed.
+3. **Cloudflare Bot Challenge on Web Rankings**: If frontend endpoints receive an anti-bot challenge (e.g. 403 or non-JSON HTML), it must log a non-fatal warning and allow the primary API `/models` and `/rankings-daily` workflows to succeed.
 4. **Boundary Date Transitions**: On leap years or month boundaries (e.g. 2026-02-28 to 2026-03-01), the date sequence generator must generate valid `YYYY-MM-DD` strings in UTC without off-by-one errors.
 5. **No-op Git Commits**: When all dates within the lookback window are already cached and no data changed, the GitHub Actions step must detect clean working tree and exit without error or creating empty Git commits.
 
@@ -46,6 +47,7 @@
 - Create: `data/openrouter/models/.gitkeep`
 - Create: `data/openrouter/rankings_daily/.gitkeep`
 - Create: `data/openrouter/apps/.gitkeep`
+- Create: `data/openrouter/task_spend/.gitkeep`
 - Test: `tests/test_scaffold.py`
 
 **Interfaces:**
@@ -67,6 +69,7 @@ def test_project_structure():
     assert (root / "data" / "openrouter" / "models").is_dir()
     assert (root / "data" / "openrouter" / "rankings_daily").is_dir()
     assert (root / "data" / "openrouter" / "apps").is_dir()
+    assert (root / "data" / "openrouter" / "task_spend").is_dir()
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -109,11 +112,13 @@ mkdir -p sources/openrouter
 mkdir -p data/openrouter/models
 mkdir -p data/openrouter/rankings_daily
 mkdir -p data/openrouter/apps
+mkdir -p data/openrouter/task_spend
 touch sources/__init__.py
 touch sources/openrouter/__init__.py
 touch data/openrouter/models/.gitkeep
 touch data/openrouter/rankings_daily/.gitkeep
 touch data/openrouter/apps/.gitkeep
+touch data/openrouter/task_spend/.gitkeep
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -371,64 +376,110 @@ git commit -m "feat(sources): implement OpenRouter API client with rate pacing a
 
 ---
 
-### Task 3: OpenRouter Web Apps & Coding Agents Crawler
+### Task 3: OpenRouter Frontend Ecosystem Leaderboards (Apps & Task Spend)
 
 **Files:**
 - Create: `sources/openrouter/crawler.py`
 - Test: `tests/test_crawler.py`
 
 **Interfaces:**
-- Consumes: Public URL `https://openrouter.ai/rankings`.
-- Produces: `OpenRouterWebCrawler` class with method:
-  - `crawl_apps() -> dict`: returns dictionary containing parsed application rankings (`day`, `week`, `month`) including titles (e.g. Hermes Agent, Cline, Claude Code), categories (`cli-agent`, `ide-extension`), token totals, and request counts.
-  - Non-fatal error handling: returns `{"status": "blocked"|"error", "apps": {}, "error": str}`.
+- Consumes: Public REST endpoints:
+  - `https://openrouter.ai/api/frontend/v1/rankings/apps`
+  - `https://openrouter.ai/api/frontend/v1/rankings/task-spend`
+- Produces: `OpenRouterFrontendClient` (aliased as `OpenRouterWebCrawler` for backward compatibility) class with methods:
+  - `fetch_apps() -> dict`: returns dictionary containing application rankings (`day`, `week`, `month`) including titles (e.g. Hermes Agent, Cline, Claude Code), categories (`cli-agent`, `ide-extension`), token totals, and request counts.
+  - `fetch_task_spend() -> dict`: returns dictionary containing task-level spend & tokens share (`macroCategories`, `tasks`, `models` breakdown).
+  - Non-fatal error handling: returns `{"status": "error"|"ok", "data": {}, "error": str}`.
 
-- [ ] **Step 1: Write failing test for apps crawler**
+- [ ] **Step 1: Write failing test for frontend client (apps & task spend)**
 
 ```python
 # tests/test_crawler.py
 from unittest.mock import patch, MagicMock
 from sources.openrouter.crawler import OpenRouterWebCrawler
 
-SAMPLE_SSR_PAYLOAD_HTML = """
-<html>
-<body>
-<script>self.__next_f.push([1,"33:[\\"$\\",\\"div\\",null,{\\"state\\":{\\"mutations\\":[],\\"queries\\":[{\\"dehydratedAt\\":1790573839284,\\"state\\":{\\"data\\":{\\"day\\":[{\\"app_id\\":3067167,\\"total_tokens\\":\\"1729210473166\\",\\"total_requests\\":18124609,\\"rank\\":2,\\"app\\":{\\"categories\\":[\\"personal-agent\\",\\"cli-agent\\"],\\"created_at\\":\\"2026-03-12T23:26:33.624Z\\",\\"description\\":\\"Hermes Agent is an open-source AI agent\\",\\"id\\":3067167,\\"slug\\":\\"hermes-agent\\",\\"title\\":\\"Hermes Agent\\"}},{\\"app_id\\":190604,\\"total_tokens\\":\\"926893776688\\",\\"total_requests\\":5781615,\\"rank\\":3,\\"app\\":{\\"categories\\":[\\"ide-extension\\",\\"cli-agent\\"],\\"created_at\\":\\"2024-10-09T07:53:24.932Z\\",\\"description\\":\\"Cline is an open-source AI coding agent\\",\\"id\\":190604,\\"slug\\":\\"cline\\",\\"title\\":\\"Cline\\"}}],\\"week\\":[],\\"month\\":[]},\\"dataUpdateCount\\":1},\\"queryKey\\":[\\"rankings\\",\\"apps\\"]}]}}]\n"])</script>
-</body>
-</html>
-"""
+SAMPLE_APPS_PAYLOAD = {
+    "day": [
+        {
+            "app_id": 3067167,
+            "total_tokens": "1729210473166",
+            "total_requests": 18124609,
+            "rank": 2,
+            "app": {
+                "categories": ["personal-agent", "cli-agent"],
+                "created_at": "2026-03-12T23:26:33.624Z",
+                "description": "Hermes Agent is an open-source AI agent",
+                "id": 3067167,
+                "slug": "hermes-agent",
+                "title": "Hermes Agent"
+            }
+        }
+    ],
+    "week": [],
+    "month": []
+}
+
+SAMPLE_TASK_SPEND_PAYLOAD = {
+    "macroCategories": [
+        {"id": "general", "name": "General", "share": 0.312},
+        {"id": "agent", "name": "Agent", "share": 0.300}
+    ],
+    "tasks": {
+        "classification": {
+            "name": "Classification",
+            "share": 0.104,
+            "models": [
+                {"id": "anthropic/claude-opus-5", "name": "Claude Opus 5", "share": 0.067, "deltaPp": -2.2}
+            ]
+        }
+    }
+}
 
 def test_crawler_init():
-    crawler = OpenRouterWebCrawler(url="https://openrouter.ai/rankings")
-    assert crawler.url == "https://openrouter.ai/rankings"
+    crawler = OpenRouterWebCrawler()
+    assert crawler.base_url == "https://openrouter.ai/api/frontend/v1/rankings"
 
 @patch("sources.openrouter.crawler.requests.get")
-def test_crawl_apps_success(mock_get):
-    mock_resp = MagicMock(status_code=200, text=SAMPLE_SSR_PAYLOAD_HTML)
+def test_fetch_apps_success(mock_get):
+    mock_resp = MagicMock(status_code=200)
+    mock_resp.json.return_value = SAMPLE_APPS_PAYLOAD
     mock_get.return_value = mock_resp
 
     crawler = OpenRouterWebCrawler()
-    result = crawler.crawl_apps()
+    result = crawler.fetch_apps()
 
     assert result["status"] == "ok"
-    assert "day" in result["apps"]
-    assert len(result["apps"]["day"]) == 2
-    assert result["apps"]["day"][0]["title"] == "Hermes Agent"
-    assert result["apps"]["day"][0]["total_tokens"] == "1729210473166"
-    assert "cli-agent" in result["apps"]["day"][0]["categories"]
-    assert result["apps"]["day"][1]["title"] == "Cline"
+    assert "day" in result["data"]
+    assert len(result["data"]["day"]) == 1
+    assert result["data"]["day"][0]["title"] == "Hermes Agent"
+    assert result["data"]["day"][0]["total_tokens"] == "1729210473166"
+    assert "cli-agent" in result["data"]["day"][0]["categories"]
 
 @patch("sources.openrouter.crawler.requests.get")
-def test_crawl_apps_cloudflare_blocked_graceful(mock_get):
-    mock_resp = MagicMock(status_code=403, text="<html>Cloudflare Challenge</html>")
+def test_fetch_task_spend_success(mock_get):
+    mock_resp = MagicMock(status_code=200)
+    mock_resp.json.return_value = SAMPLE_TASK_SPEND_PAYLOAD
     mock_get.return_value = mock_resp
 
     crawler = OpenRouterWebCrawler()
-    result = crawler.crawl_apps()
+    result = crawler.fetch_task_spend()
 
-    assert result["status"] == "blocked"
-    assert result["apps"] == {}
-    assert "error" in result
+    assert result["status"] == "ok"
+    assert "macroCategories" in result["data"]
+    assert result["data"]["macroCategories"][0]["name"] == "General"
+    assert "classification" in result["data"]["tasks"]
+
+@patch("sources.openrouter.crawler.requests.get")
+def test_fetch_error_graceful(mock_get):
+    mock_resp = MagicMock(status_code=500, text="Internal Error")
+    mock_get.return_value = mock_resp
+
+    crawler = OpenRouterWebCrawler()
+    result = crawler.fetch_apps()
+
+    assert result["status"] == "error"
+    assert result["data"] == {}
+    assert "HTTP 500" in result["error"]
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -440,14 +491,13 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sources.openrouter.cr
 
 ```python
 # sources/openrouter/crawler.py
-import re
-import json
 import requests
 from typing import Dict, Any, List
 
 class OpenRouterWebCrawler:
-    def __init__(self, url: str = "https://openrouter.ai/rankings", timeout: int = 15):
-        self.url = url
+    """Client for OpenRouter frontend public leaderboards (apps and task-spend)."""
+    def __init__(self, base_url: str = "https://openrouter.ai/api/frontend/v1/rankings", timeout: int = 20):
+        self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.headers = {
             "User-Agent": (
@@ -455,87 +505,69 @@ class OpenRouterWebCrawler:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/128.0.0.0 Safari/537.36"
             ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9"
+            "Accept": "application/json"
         }
 
-    def crawl_apps(self) -> Dict[str, Any]:
-        """Scrapes Apps and Coding Agents leaderboard from SSR React Query state."""
+    def _fetch_json(self, endpoint: str) -> Dict[str, Any]:
+        url = f"{self.base_url}/{endpoint.lstrip('/')}"
         try:
-            resp = requests.get(self.url, headers=self.headers, timeout=self.timeout)
-            if resp.status_code != 200:
-                return {
-                    "status": "blocked" if resp.status_code in (403, 503) else "error",
-                    "error": f"HTTP {resp.status_code}",
-                    "apps": {}
-                }
-
-            html = resp.text
-            chunks = re.findall(r'self\.__next_f\.push\(\[\d+,\"(.*)\"\]\)', html)
-            full_payload = ''.join(chunks).encode('utf-8').decode('unicode_escape', errors='ignore')
-
-            apps_match = re.search(
-                r'\"state\":\{\"data\":(\{.*?\}(?=,\"dataUpdateCount\")),\"dataUpdateCount\"[^\}]*\},\"queryKey\":\[\"rankings\",\"apps\"\]',
-                full_payload
-            )
-            if not apps_match:
-                apps_match = re.search(r'\"queryKey\":\[\"rankings\",\"apps\"\].*?\"data\":(\{.*?\})', full_payload)
-
-            if apps_match:
-                raw_apps = json.loads(apps_match.group(1))
-                cleaned_apps: Dict[str, List[Dict[str, Any]]] = {}
-                for view in ("day", "week", "month"):
-                    cleaned_apps[view] = []
-                    for item in raw_apps.get(view, []):
-                        app_obj = item.get("app", {})
-                        cleaned_apps[view].append({
-                            "rank": item.get("rank"),
-                            "app_id": item.get("app_id"),
-                            "title": app_obj.get("title"),
-                            "slug": app_obj.get("slug"),
-                            "categories": app_obj.get("categories", []),
-                            "total_tokens": item.get("total_tokens"),
-                            "total_requests": item.get("total_requests"),
-                            "description": app_obj.get("description")
-                        })
-                return {
-                    "status": "ok",
-                    "apps": cleaned_apps
-                }
-
+            resp = requests.get(url, headers=self.headers, timeout=self.timeout)
+            if resp.status_code == 200:
+                return {"status": "ok", "data": resp.json()}
             return {
                 "status": "error",
-                "error": "Could not find apps payload in SSR state",
-                "apps": {}
+                "error": f"HTTP {resp.status_code}: {resp.text[:200]}",
+                "data": {}
             }
         except Exception as exc:
             return {
                 "status": "error",
                 "error": str(exc),
-                "apps": {}
+                "data": {}
             }
+
+    def fetch_apps(self) -> Dict[str, Any]:
+        """Fetches Apps and Coding Agents leaderboard from frontend JSON API."""
+        raw_res = self._fetch_json("apps")
+        if raw_res["status"] != "ok":
+            return raw_res
+
+        raw_apps = raw_res.get("data", {})
+        cleaned_apps: Dict[str, List[Dict[str, Any]]] = {}
+        for view in ("day", "week", "month"):
+            cleaned_apps[view] = []
+            for item in raw_apps.get(view, []):
+                app_obj = item.get("app", {})
+                cleaned_apps[view].append({
+                    "rank": item.get("rank"),
+                    "app_id": item.get("app_id"),
+                    "title": app_obj.get("title"),
+                    "slug": app_obj.get("slug"),
+                    "categories": app_obj.get("categories", []),
+                    "total_tokens": item.get("total_tokens"),
+                    "total_requests": item.get("total_requests"),
+                    "description": app_obj.get("description")
+                })
+        return {
+            "status": "ok",
+            "data": cleaned_apps
+        }
+
+    def fetch_task_spend(self) -> Dict[str, Any]:
+        """Fetches 'Top models by task' spend and token distribution from frontend JSON API."""
+        return self._fetch_json("task-spend")
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_crawler.py -v`
-Expected: PASS (3 passed)
+Expected: PASS (4 passed)
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add sources/openrouter/crawler.py tests/test_crawler.py
-git commit -m "feat(sources): implement OpenRouter SSR apps and coding agents crawler"
-```
-
-Run: `pytest tests/test_crawler.py -v`
-Expected: PASS (3 passed)
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add sources/openrouter/crawler.py tests/test_crawler.py
-git commit -m "feat(sources): implement OpenRouter SSR web rankings crawler"
+git commit -m "feat(sources): implement frontend client for apps and task-spend leaderboards"
 ```
 
 ---
@@ -593,15 +625,27 @@ def test_group_dates_into_ranges():
 
 def test_sync_apps_saves_file(tmp_path):
     crawler = MagicMock()
-    crawler.crawl_apps.return_value = {
+    crawler.fetch_apps.return_value = {
         "status": "ok",
-        "apps": {"day": [{"title": "Hermes Agent", "rank": 2}]}
+        "data": {"day": [{"title": "Hermes Agent", "rank": 2}]}
     }
     out_file = sync_apps(crawler, tmp_path, target_date="2026-09-28")
     assert out_file.exists()
     content = json.loads(out_file.read_text())
     assert content["date"] == "2026-09-28"
     assert content["data"]["day"][0]["title"] == "Hermes Agent"
+
+def test_sync_task_spend_saves_file(tmp_path):
+    crawler = MagicMock()
+    crawler.fetch_task_spend.return_value = {
+        "status": "ok",
+        "data": {"macroCategories": [{"name": "General", "share": 0.312}]}
+    }
+    out_file = sync_task_spend(crawler, tmp_path, target_date="2026-09-28")
+    assert out_file.exists()
+    content = json.loads(out_file.read_text())
+    assert content["date"] == "2026-09-28"
+    assert content["data"]["macroCategories"][0]["name"] == "General"
 
 def test_sync_models_saves_file(tmp_path):
     client = MagicMock()
@@ -752,7 +796,7 @@ def sync_apps(
     target_date: str,
     force: bool = False
 ) -> Path:
-    """Fetches and persists OpenRouter SSR Apps & Coding Agents leaderboard snapshot."""
+    """Fetches and persists OpenRouter frontend Apps & Coding Agents leaderboard snapshot."""
     apps_dir = data_dir / "apps"
     apps_dir.mkdir(parents=True, exist_ok=True)
     out_file = apps_dir / f"{target_date}.json"
@@ -760,13 +804,39 @@ def sync_apps(
     if not force and is_valid_json_file(out_file):
         return out_file
 
-    crawl_res = crawler.crawl_apps()
+    fetch_res = crawler.fetch_apps()
     snapshot = {
         "date": target_date,
         "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "status": crawl_res.get("status"),
-        "error": crawl_res.get("error"),
-        "data": crawl_res.get("apps", {})
+        "status": fetch_res.get("status"),
+        "error": fetch_res.get("error"),
+        "data": fetch_res.get("data", {})
+    }
+    with out_file.open("w", encoding="utf-8") as f:
+        json.dump(snapshot, f, indent=2, ensure_ascii=False)
+    return out_file
+
+def sync_task_spend(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    target_date: str,
+    force: bool = False
+) -> Path:
+    """Fetches and persists OpenRouter frontend Top Models by Task spend snapshot."""
+    task_dir = data_dir / "task_spend"
+    task_dir.mkdir(parents=True, exist_ok=True)
+    out_file = task_dir / f"{target_date}.json"
+
+    if not force and is_valid_json_file(out_file):
+        return out_file
+
+    fetch_res = crawler.fetch_task_spend()
+    snapshot = {
+        "date": target_date,
+        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "status": fetch_res.get("status"),
+        "error": fetch_res.get("error"),
+        "data": fetch_res.get("data", {})
     }
     with out_file.open("w", encoding="utf-8") as f:
         json.dump(snapshot, f, indent=2, ensure_ascii=False)
@@ -847,7 +917,7 @@ def run_sync(
     force: bool = False,
     only: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Orchestrates sync pipeline across models, apps, and rankings_daily."""
+    """Orchestrates sync pipeline across models, apps, task_spend, and rankings_daily."""
     today_utc = datetime.datetime.now(datetime.timezone.utc).date()
     yesterday_utc = today_utc - datetime.timedelta(days=1)
     today_str = today_utc.strftime("%Y-%m-%d")
@@ -861,12 +931,17 @@ def run_sync(
         models_file = sync_models(client, data_dir, today_str, force=force)
         results["models"] = str(models_file)
 
-    # 2. Sync apps & coding agents (Web Crawler)
+    # 2. Sync apps & coding agents (Frontend API)
     if only in (None, "apps"):
         apps_file = sync_apps(crawler, data_dir, today_str, force=force)
         results["apps"] = str(apps_file)
 
-    # 3. Sync rankings daily (API)
+    # 3. Sync top models by task (Frontend API)
+    if only in (None, "task_spend"):
+        task_file = sync_task_spend(crawler, data_dir, today_str, force=force)
+        results["task_spend"] = str(task_file)
+
+    # 4. Sync rankings daily (API)
     if only in (None, "rankings"):
         if end_date:
             e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -958,6 +1033,7 @@ def test_cli_main_executes_sync(mock_run_sync):
     mock_run_sync.return_value = {
         "models": "data/openrouter/models/2026-09-28.json",
         "apps": "data/openrouter/apps/2026-09-28.json",
+        "task_spend": "data/openrouter/task_spend/2026-09-28.json",
         "rankings_daily": {"fetched_days": 2, "remaining_days": 0, "failed": []}
     }
     exit_code = main(["sync", "--lookback-days", "7"])
@@ -1020,9 +1096,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sync_parser.add_argument(
         "--only",
-        choices=["models", "rankings", "apps"],
+        choices=["models", "rankings", "apps", "task_spend"],
         default=None,
-        help="Sync only specified target (models, rankings, or apps)"
+        help="Sync only specified target (models, rankings, apps, or task_spend)"
     )
 
     return parser
@@ -1033,7 +1109,7 @@ def main(args: list = None) -> int:
 
     if parsed.command == "sync":
         api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key and parsed.only != "models":
+        if not api_key and parsed.only not in ("models", "apps", "task_spend"):
             print("[Warning] OPENROUTER_API_KEY is not set. Rankings daily API calls will fail.")
 
         data_dir = Path(__file__).resolve().parent / "data" / "openrouter"
@@ -1055,6 +1131,8 @@ def main(args: list = None) -> int:
                 print(f"  - Models snapshot: {results['models']}")
             if "apps" in results:
                 print(f"  - Apps snapshot: {results['apps']}")
+            if "task_spend" in results:
+                print(f"  - Top models by task snapshot: {results['task_spend']}")
             if "rankings_daily" in results:
                 stats = results["rankings_daily"]
                 print(f"  - Daily rankings: fetched {stats['fetched_days']} days, remaining missing {stats['remaining_days']} days")

@@ -33,9 +33,10 @@ llm-market-data/
 │       └── sync.py               # 缺失日期扫描、限流配额控制与增量补抓调度引擎
 ├── data/                         # 持久化数据快照存储根目录
 │   └── openrouter/
-│       ├── models/               # YYYY-MM-DD.json（模型元数据与输入/输出定价快照，来自 API）
+│       ├── models/               # YYYY-MM-DD.json（模型元数据与定价快照，来自 API）
 │       ├── rankings_daily/       # YYYY-MM-DD.json（官方每日 Top 50 模型 Token 调用量明细，来自 API）
-│       └── apps/                 # YYYY-MM-DD.json（网页独有的 Apps / Coding Agents 排行快照）
+│       ├── apps/                 # YYYY-MM-DD.json（Coding Agents / Apps 排行快照，来自公开前端 API）
+│       └── task_spend/           # YYYY-MM-DD.json（Top models by task: 各场景与任务份额快照，来自公开前端 API）
 ├── deploy/
 │   └── cloudflare/
 │       ├── wrangler.toml         # Cloudflare Worker Cron Trigger 配置文件
@@ -46,7 +47,7 @@ llm-market-data/
 ├── tests/                        # 自动化测试
 │   ├── __init__.py
 │   ├── test_client.py            # API 客户端与重试测试
-│   ├── test_crawler.py           # 网页 SSR 数据解析测试
+│   ├── test_crawler.py           # 前端数据解析测试
 │   └── test_sync.py              # 缺失补抓算法与节流控制测试
 ├── .env.example                  # 环境变量示例（OPENROUTER_API_KEY）
 ├── .gitignore                    # 忽略临时文件、缓存
@@ -64,7 +65,7 @@ llm-market-data/
 - **存储内容**：包含当天抓取时间戳 `fetched_at` 以及所有模型的完整元数据列表（过滤/保留关键字段：`id`, `name`, `pricing` (`prompt`, `completion`), `context_length`, `architecture`, `description`）。
 
 ### 3.2 每日调用排行 (`rankings_daily/YYYY-MM-DD.json`)
-- **来源**：`GET https://openrouter.ai/api/v1/datasets/rankings-daily?date=YYYY-MM-DD`
+- **来源**：`GET https://openrouter.ai/api/v1/datasets/rankings-daily?start_date=...&end_date=...`
 - **权限**：需请求头 `Authorization: Bearer <OPENROUTER_API_KEY>`
 - **字段结构**：
   ```json
@@ -85,8 +86,8 @@ llm-market-data/
   ```
 
 ### 3.3 网页端独有快照：应用与 Agent 排行 (`apps/YYYY-MM-DD.json`)
-- **设计原则（去重互补）**：严格以官方 API 接口数据为基准；接口已有的模型排行数据绝不从网页端重复抓取。网页爬虫仅抓取接口未开放的生态层快照。
-- **数据来源**：抓取 `https://openrouter.ai/rankings` 页面中 Next.js App Router 注入的 `["rankings", "apps"]` 脱水数据。
+- **设计原则（去重互补）**：严格以官方 API 接口数据为基准；接口已有的模型排行数据绝不从网页端重复抓取。
+- **数据来源**：直接通过公开 REST 接口 `GET https://openrouter.ai/api/frontend/v1/rankings/apps` 获取纯 JSON（免鉴权）。
 - **覆盖范围**：包含 `day`（日榜）、`week`（周榜）、`month`（月榜）三个维度的应用排行。
 - **核心数据项**：
   - `rank`: 应用排名
@@ -96,9 +97,17 @@ llm-market-data/
   - `total_tokens`: 该周期内处理的总 Token 数量
   - `total_requests`: 调用总请求次数
   - `description`: 工具简介描述
-- **容错隔离**：若网页爬取因 Cloudflare 反爬拦截，仅输出警告并跳过，绝不阻断核心 API 数据的持久化流程。
 
-### 3.4 幂等规则
+### 3.4 任务场景细分快照：Top Models by Task (`task_spend/YYYY-MM-DD.json`)
+- **来源**：直接通过公开 REST 接口 `GET https://openrouter.ai/api/frontend/v1/rankings/task-spend` 获取纯 JSON（免鉴权）。
+- **覆盖范围**：同时包含 `spend`（金额份额）与 `tokens`（Token 份额）两大维度。
+- **核心数据项**：
+  - `macroCategories`: 四大宏观任务领域分布（General 31.2%, Agent 30.0%, Code 29.1%, Data 9.7%）
+  - `tasks`: 各细分任务（Classification, Workflow Execution, Code Generation, Debugging, Multi-step Planning 等）在总大盘中的占比
+  - `models`: 各任务下排名前列的模型标识、具体份额占比 (`share`) 与近期点位变动 (`deltaPp`)
+- **归档格式**：保存为每日完整快照 `data/openrouter/task_spend/YYYY-MM-DD.json`。
+
+### 3.5 幂等规则
 - 检查目标 JSON 文件：若已存在且为非空合法 JSON，直接跳过；
 - 支持传入 `--force` 参数以允许重新覆盖（例如手动强制刷新特定日期）。
 
