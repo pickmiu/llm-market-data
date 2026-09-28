@@ -4,7 +4,7 @@
 
 **Goal:** Build a robust, lightweight OpenRouter market data collection and persistence pipeline executed via GitHub Actions, scheduled by a Cloudflare Worker cron trigger, storing JSON snapshots in `data/`, with rate-limited historical backfill.
 
-**Architecture:** A decoupled GitOps pipeline where a Cloudflare Worker triggers a GitHub Actions workflow (`workflow_dispatch`) at UTC 00:30 (Beijing 08:30) following OpenRouter's "most recent complete day" settlement. The runner executes a Python sync engine that fetches `/models` pricing, scrapes web ranking SSR data, scans `data/openrouter/rankings_daily/` for missing dates within a configurable lookback window, safely backfills up to `max_requests` per run with 2.5s pacing and exponential backoff, and commits updated JSON files back to Git.
+**Architecture:** A decoupled GitOps pipeline where a Cloudflare Worker triggers a GitHub Actions workflow (`workflow_dispatch`) at UTC 00:30 (Beijing 08:30) following OpenRouter's "most recent complete day" settlement. The runner executes a Python sync engine that fetches `/models` pricing, scrapes web ranking SSR data, scans `data/openrouter/rankings_daily/` for missing dates from yesterday all the way back to the platform dataset inception (`2025-01-01`), safely backfills missing ranges using date chunking (up to 30 days per request) with 2.5s pacing and exponential backoff, and commits updated JSON files back to Git.
 
 **Tech Stack:** Python 3.11+, `requests`, `pytest`, JavaScript/Wrangler (Cloudflare Workers), GitHub Actions YAML.
 
@@ -15,6 +15,7 @@
 - **Python Version**: Python 3.11+
 - **Core Dependencies**: Lightweight only (`requests`, `python-dotenv`). No heavy data science/visualization frameworks (like matplotlib or pandas) in phase 1.
 - **Test Framework**: `pytest`
+- **Platform Inception Floor**: `2025-01-01` (OpenRouter datasets/rankings-daily dataset genesis).
 - **Rate Limit Pacing**: Minimum 2.5s pause between consecutive HTTP calls to OpenRouter API (max 24 req/min, strictly below 30 req/min limit).
 - **Retry Policy**: 3 exponential retries for 429 and 5xx (intervals: 5s, 10s, 20s).
 - **Storage Paths**:
@@ -190,7 +191,7 @@ def test_get_rankings_daily_success(mock_get):
     mock_get.return_value = mock_resp
 
     client = OpenRouterClient(api_key="sk-test-key", rate_delay=0.0)
-    res = client.get_rankings_daily("2026-09-27")
+    res = client.get_rankings_daily(date="2026-09-27")
     assert res["data"][0]["model_permaslug"] == "openai/gpt-4o"
     mock_get.assert_called_once_with(
         "https://openrouter.ai/api/v1/datasets/rankings-daily",
@@ -199,6 +200,32 @@ def test_get_rankings_daily_success(mock_get):
             "Authorization": "Bearer sk-test-key"
         },
         params={"date": "2026-09-27"},
+        timeout=30
+    )
+
+@patch("sources.openrouter.client.requests.get")
+def test_get_rankings_daily_date_range(mock_get):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "data": [
+            {"date": "2025-01-01", "model_permaslug": "openai/gpt-4o", "total_tokens": 500},
+            {"date": "2025-01-02", "model_permaslug": "openai/gpt-4o", "total_tokens": 600}
+        ],
+        "asOf": "2026-09-28T00:15:00Z"
+    }
+    mock_get.return_value = mock_resp
+
+    client = OpenRouterClient(api_key="sk-test-key", rate_delay=0.0)
+    res = client.get_rankings_daily(start_date="2025-01-01", end_date="2025-01-02")
+    assert len(res["data"]) == 2
+    mock_get.assert_called_once_with(
+        "https://openrouter.ai/api/v1/datasets/rankings-daily",
+        headers={
+            "User-Agent": "LLM-Market-Data-Collector/1.0",
+            "Authorization": "Bearer sk-test-key"
+        },
+        params={"start_date": "2025-01-01", "end_date": "2025-01-02"},
         timeout=30
     )
 
@@ -211,7 +238,7 @@ def test_retry_on_429(mock_get, mock_sleep):
     mock_get.side_effect = [mock_429, mock_200]
 
     client = OpenRouterClient(api_key="sk-test", rate_delay=0.0, max_retries=2)
-    res = client.get_rankings_daily("2026-09-27")
+    res = client.get_rankings_daily(date="2026-09-27")
     assert res == {"data": []}
     assert mock_get.call_count == 2
     mock_sleep.assert_called()
@@ -224,7 +251,7 @@ def test_exhausted_retries_raises_api_error(mock_get, mock_sleep):
 
     client = OpenRouterClient(api_key="sk-test", rate_delay=0.0, max_retries=2)
     with pytest.raises(OpenRouterAPIError, match="Max retries exceeded"):
-        client.get_rankings_daily("2026-09-27")
+        client.get_rankings_daily(date="2026-09-27")
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -314,9 +341,21 @@ class OpenRouterClient:
         """Fetch models list and pricing (public, no auth required)."""
         return self._request("models", auth_required=False)
 
-    def get_rankings_daily(self, date: str) -> Dict[str, Any]:
-        """Fetch daily rankings for a specific date (requires API key)."""
-        return self._request("datasets/rankings-daily", params={"date": date}, auth_required=True)
+    def get_rankings_daily(
+        self,
+        date: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Fetch daily rankings for a specific date or date range (requires API key)."""
+        params = {}
+        if date:
+            params["date"] = date
+        if start_date:
+            params["start_date"] = start_date
+        if end_date:
+            params["end_date"] = end_date
+        return self._request("datasets/rankings-daily", params=params, auth_required=True)
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -558,6 +597,12 @@ def test_find_missing_dates(tmp_path):
     # Expected reverse order: 2026-09-27, 2026-09-26, 2026-09-24 (25 exists and valid)
     assert missing == ["2026-09-27", "2026-09-26", "2026-09-24"]
 
+def test_group_dates_into_ranges():
+    from sources.openrouter.sync import group_dates_into_ranges
+    dates = ["2025-01-01", "2025-01-02", "2025-01-03", "2025-01-10", "2025-01-11"]
+    ranges = group_dates_into_ranges(dates, max_span_days=5)
+    assert ranges == [("2025-01-01", "2025-01-03"), ("2025-01-10", "2025-01-11")]
+
 def test_sync_models_saves_file(tmp_path):
     client = MagicMock()
     client.get_models.return_value = {"data": [{"id": "test-model"}]}
@@ -578,16 +623,32 @@ def test_sync_models_idempotent_skip(tmp_path):
     sync_models(client, tmp_path, target_date="2026-09-28", force=False)
     client.get_models.assert_not_called()
 
-def test_sync_rankings_daily_respects_max_requests(tmp_path):
+def test_sync_rankings_daily_chunked_and_respects_max_requests(tmp_path):
     client = MagicMock()
-    client.get_rankings_daily.return_value = {"data": [], "asOf": "2026-09-28T00:00:00Z"}
+    client.get_rankings_daily.side_effect = [
+        {
+            "data": [
+                {"date": "2026-09-26", "model_permaslug": "openai/gpt-4o", "total_tokens": 100},
+                {"date": "2026-09-27", "model_permaslug": "openai/gpt-4o", "total_tokens": 200}
+            ],
+            "asOf": "2026-09-28T00:00:00Z"
+        },
+        {
+            "data": [
+                {"date": "2026-09-24", "model_permaslug": "openai/gpt-4o", "total_tokens": 300},
+                {"date": "2026-09-25", "model_permaslug": "openai/gpt-4o", "total_tokens": 400}
+            ],
+            "asOf": "2026-09-28T00:00:00Z"
+        }
+    ]
 
     missing_dates = ["2026-09-27", "2026-09-26", "2026-09-25", "2026-09-24"]
-    stats = sync_rankings_daily(client, tmp_path, missing_dates, max_requests=2)
+    stats = sync_rankings_daily(client, tmp_path, missing_dates, max_requests=1, chunk_size=2)
 
-    assert stats["fetched"] == 2
-    assert stats["remaining"] == 2
-    assert client.get_rankings_daily.call_count == 2
+    assert stats["requests_made"] == 1
+    assert stats["fetched_days"] == 2
+    assert stats["remaining_days"] == 2
+    assert client.get_rankings_daily.call_count == 1
     assert (tmp_path / "rankings_daily" / "2026-09-27.json").exists()
     assert (tmp_path / "rankings_daily" / "2026-09-26.json").exists()
     assert not (tmp_path / "rankings_daily" / "2026-09-25.json").exists()
@@ -605,9 +666,11 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sources.openrouter.sy
 import json
 import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from sources.openrouter.client import OpenRouterClient, OpenRouterAPIError
 from sources.openrouter.crawler import OpenRouterWebCrawler
+
+DATASET_INCEPTION_DATE = "2025-01-01"
 
 def is_valid_json_file(file_path: Path) -> bool:
     """Checks whether file exists, has content > 0 bytes, and contains valid JSON."""
@@ -636,6 +699,28 @@ def find_missing_dates(
             missing.append(date_str)
         curr -= datetime.timedelta(days=1)
     return missing
+
+def group_dates_into_ranges(dates: List[str], max_span_days: int = 30) -> List[Tuple[str, str]]:
+    """Groups date strings into contiguous or bounded date ranges [start_date, end_date]."""
+    if not dates:
+        return []
+    sorted_dates = sorted(dates)
+    ranges = []
+
+    range_start = sorted_dates[0]
+    prev_dt = datetime.datetime.strptime(range_start, "%Y-%m-%d").date()
+    start_dt = prev_dt
+
+    for d_str in sorted_dates[1:]:
+        curr_dt = datetime.datetime.strptime(d_str, "%Y-%m-%d").date()
+        if (curr_dt - prev_dt).days > 1 or (curr_dt - start_dt).days >= max_span_days:
+            ranges.append((range_start, prev_dt.strftime("%Y-%m-%d")))
+            range_start = d_str
+            start_dt = curr_dt
+        prev_dt = curr_dt
+
+    ranges.append((range_start, prev_dt.strftime("%Y-%m-%d")))
+    return ranges
 
 def sync_models(
     client: OpenRouterClient,
@@ -692,49 +777,70 @@ def sync_rankings_daily(
     data_dir: Path,
     missing_dates: List[str],
     max_requests: int = 40,
-    force: bool = False
+    force: bool = False,
+    chunk_size: int = 30
 ) -> Dict[str, Any]:
-    """Iterates through missing dates and backfills rankings_daily within max_requests."""
+    """Groups missing dates into range chunks and backfills rankings_daily within max_requests."""
     rankings_dir = data_dir / "rankings_daily"
     rankings_dir.mkdir(parents=True, exist_ok=True)
 
-    fetched = 0
+    date_ranges = group_dates_into_ranges(missing_dates, max_span_days=chunk_size)
+    requests_made = 0
+    fetched_days = 0
     failed = []
 
-    for date_str in missing_dates:
-        if fetched >= max_requests:
+    for start_d, end_d in date_ranges:
+        if requests_made >= max_requests:
             break
-        out_file = rankings_dir / f"{date_str}.json"
-        if not force and is_valid_json_file(out_file):
-            continue
 
         try:
-            res = client.get_rankings_daily(date_str)
-            snapshot = {
-                "date": date_str,
-                "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "as_of": res.get("asOf"),
-                "data": res.get("data", [])
-            }
-            with out_file.open("w", encoding="utf-8") as f:
-                json.dump(snapshot, f, indent=2, ensure_ascii=False)
-            fetched += 1
+            res = client.get_rankings_daily(start_date=start_d, end_date=end_d)
+            records = res.get("data", [])
+            as_of = res.get("asOf")
+
+            # Group returned rows by date
+            by_date: Dict[str, List[Dict[str, Any]]] = {}
+            for row in records:
+                r_date = row.get("date")
+                if r_date:
+                    by_date.setdefault(r_date, []).append(row)
+
+            # Determine all dates spanned by this chunk
+            s_dt = datetime.datetime.strptime(start_d, "%Y-%m-%d").date()
+            e_dt = datetime.datetime.strptime(end_d, "%Y-%m-%d").date()
+            curr = s_dt
+            while curr <= e_dt:
+                d_str = curr.strftime("%Y-%m-%d")
+                out_file = rankings_dir / f"{d_str}.json"
+                if force or not is_valid_json_file(out_file):
+                    day_snapshot = {
+                        "date": d_str,
+                        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        "as_of": as_of,
+                        "data": by_date.get(d_str, [])
+                    }
+                    with out_file.open("w", encoding="utf-8") as f:
+                        json.dump(day_snapshot, f, indent=2, ensure_ascii=False)
+                    fetched_days += 1
+                curr += datetime.timedelta(days=1)
+
+            requests_made += 1
         except OpenRouterAPIError as exc:
-            failed.append({"date": date_str, "error": str(exc)})
-            # Break early on persistent failure (e.g. rate limit exhausted) to prevent wasting quota
+            failed.append({"range": f"{start_d}..{end_d}", "error": str(exc)})
             break
 
-    remaining = len(missing_dates) - fetched
+    remaining_days = max(0, len(missing_dates) - fetched_days)
     return {
-        "fetched": fetched,
-        "remaining": remaining,
+        "requests_made": requests_made,
+        "fetched_days": fetched_days,
+        "remaining_days": remaining_days,
         "failed": failed
     }
 
 def run_sync(
     data_dir: Path,
     api_key: Optional[str] = None,
-    lookback_days: int = 90,
+    lookback_days: Optional[int] = None,
     max_requests: int = 40,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -769,8 +875,11 @@ def run_sync(
 
         if start_date:
             s_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
-        else:
+        elif lookback_days is not None:
             s_dt = e_dt - datetime.timedelta(days=lookback_days - 1)
+        else:
+            # Auto-backfill to platform inception floor
+            s_dt = datetime.datetime.strptime(DATASET_INCEPTION_DATE, "%Y-%m-%d").date()
 
         rankings_dir = data_dir / "rankings_daily"
         missing = find_missing_dates(rankings_dir, s_dt, e_dt)
@@ -821,7 +930,7 @@ def test_cli_parser_defaults():
     parser = build_parser()
     args = parser.parse_args(["sync"])
     assert args.command == "sync"
-    assert args.lookback_days == 90
+    assert args.lookback_days is None
     assert args.max_requests == 40
     assert args.force is False
     assert args.only is None
@@ -848,7 +957,7 @@ def test_cli_parser_custom_args():
 def test_cli_main_executes_sync(mock_run_sync):
     mock_run_sync.return_value = {
         "models": "data/openrouter/models/2026-09-28.json",
-        "rankings_daily": {"fetched": 2, "remaining": 0, "failed": []}
+        "rankings_daily": {"fetched_days": 2, "remaining_days": 0, "failed": []}
     }
     exit_code = main(["sync", "--lookback-days", "7"])
     assert exit_code == 0
@@ -878,11 +987,12 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     sync_parser = subparsers.add_parser("sync", help="Synchronize OpenRouter datasets")
+    env_lookback = os.getenv("LOOKBACK_DAYS")
     sync_parser.add_argument(
         "--lookback-days",
         type=int,
-        default=int(os.getenv("LOOKBACK_DAYS", "90")),
-        help="Number of past days to scan for missing daily rankings (default: 90)"
+        default=int(env_lookback) if env_lookback else None,
+        help="Optional: Number of past days to scan. If omitted, automatically backfills to platform inception (2025-01-01)."
     )
     sync_parser.add_argument(
         "--max-requests",
@@ -1040,12 +1150,21 @@ export default {
     const repo = env.GITHUB_REPO;
     const workflowFile = env.WORKFLOW_FILE || "collector.yml";
     const pat = env.GITHUB_PAT;
-    const lookbackDays = env.LOOKBACK_DAYS || "90";
     const maxRequests = env.MAX_REQUESTS_PER_RUN || "40";
 
     if (!owner || !repo || !pat) {
       console.error("Missing required env vars: GITHUB_OWNER, GITHUB_REPO, GITHUB_PAT");
       return;
+    }
+
+    const payload = {
+      ref: "main",
+      inputs: {
+        max_requests: maxRequests
+      }
+    };
+    if (env.LOOKBACK_DAYS) {
+      payload.inputs.lookback_days = env.LOOKBACK_DAYS;
     }
 
     const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
@@ -1056,13 +1175,7 @@ export default {
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "CF-Worker-Market-Scheduler"
       },
-      body: JSON.stringify({
-        ref: "main",
-        inputs: {
-          lookback_days: lookbackDays,
-          max_requests: maxRequests
-        }
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
@@ -1083,9 +1196,9 @@ on:
   workflow_dispatch:
     inputs:
       lookback_days:
-        description: 'Number of days to look back for missing rankings'
+        description: 'Optional: Number of days to look back (leave empty for auto inception backfill)'
         required: false
-        default: '90'
+        default: ''
       max_requests:
         description: 'Maximum API requests for backfilling in this run'
         required: false
@@ -1121,8 +1234,12 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
+          LOOKBACK_FLAG=""
+          if [ -n "${{ github.event.inputs.lookback_days }}" ]; then
+            LOOKBACK_FLAG="--lookback-days ${{ github.event.inputs.lookback_days }}"
+          fi
           python cli.py sync \
-            --lookback-days "${{ github.event.inputs.lookback_days || '90' }}" \
+            $LOOKBACK_FLAG \
             --max-requests "${{ github.event.inputs.max_requests || '40' }}"
 
       - name: Commit and push changes
