@@ -137,16 +137,19 @@ python cli.py sync --force
    ```
 4. **调度触发方式**：
    * **自动定时**：每日 `00:30 UTC`（北京时间 08:30）通过 Cron 自动触发。
-   * **手动调用（HTTP API）**：部署后可直接通过浏览器访问或调用 Worker URL 手动触发，支持自定义参数：
+   * **手动调用（HTTP API）**：访问根路径查看状态，访问 `/trigger`（或 `/trigger/sync`）手动触发，支持自定义参数：
      ```bash
-     # 浏览器打开或命令行 GET 请求
+     # 查看 Worker 运行状态与说明（不会触发任务）
      curl https://<your-worker>.workers.dev/
 
+     # 浏览器打开或命令行触发同步
+     curl https://<your-worker>.workers.dev/trigger
+
      # 带参数手动触发（如最近 7 天、最大 20 次请求）
-     curl "https://<your-worker>.workers.dev/?lookback_days=7&max_requests=20"
+     curl "https://<your-worker>.workers.dev/trigger?lookback_days=7&max_requests=20"
 
      # 或通过 POST JSON 触发
-     curl -X POST https://<your-worker>.workers.dev/ \
+     curl -X POST https://<your-worker>.workers.dev/trigger \
        -H "Content-Type: application/json" \
        -d '{"lookback_days": 14, "max_requests": 30}'
      ```

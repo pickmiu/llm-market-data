@@ -137,10 +137,16 @@ Ready-to-deploy Worker located in `deploy/cloudflare/`:
    ```
 4. **Trigger Methods**:
    * **Scheduled Cron**: Triggers daily at `00:30 UTC` (08:30 Beijing Time).
-   * **Manual HTTP Trigger**: Trigger anytime via browser or API with optional custom parameters:
+   * **Manual HTTP Trigger**: Check status at `/` or trigger via `/trigger` (or `/trigger/sync`) with optional parameters:
      ```bash
+     # Check worker status (no trigger)
      curl https://<your-worker>.workers.dev/
-     curl "https://<your-worker>.workers.dev/?lookback_days=7&max_requests=20"
+
+     # Manually trigger synchronization
+     curl https://<your-worker>.workers.dev/trigger
+
+     # Trigger with custom parameters
+     curl "https://<your-worker>.workers.dev/trigger?lookback_days=7&max_requests=20"
      ```
 
 ---
