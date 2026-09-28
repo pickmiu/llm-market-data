@@ -3,7 +3,7 @@
 > **数据基准**：OpenRouter 官方元数据、基准评测数据集与前端实时仪表盘（基准日期：2026-09-28）  
 > **研究对象**：OpenAI GPT-6 Luna（2026-09-22 发布）对比前代 GPT-5.6 Luna（2026-07-09 发布）  
 > **核心命题**：**当新模型价格减半而能力保持不变时，整体市场规模是收缩还是扩大？**  
-> **分析脚本**：[generate_charts.m](file:///Users/pickmiu/Project/llm-market-data/report/generate_charts.m)（MATLAB 绘图脚本）与 [plot_charts.py](file:///Users/pickmiu/Project/llm-market-data/report/plot_charts.py)
+> **分析脚本**：[generate_charts.m](attachments/openai_gpt6_luna_market_expansion_analysis/generate_charts.m)（MATLAB 绘图脚本）与 [plot_charts.py](attachments/openai_gpt6_luna_market_expansion_analysis/plot_charts.py)
 
 ---
 
@@ -42,7 +42,7 @@
 
 ### 1.2 定价与基准能力图示
 
-![定价与能力对比](images/fig1_price_intelligence_comparison.png)
+![定价与能力对比](attachments/openai_gpt6_luna_market_expansion_analysis/fig1_price_intelligence_comparison.png)
 
 > **数据实证发现**：GPT-6 Luna 的设计定位于“纯性价比模型升级”，在架构未做大幅智力跨越的情况下，通过工程优化与吞吐优化，将单位 Token 的使用门槛压低了 50% 以上。
 
@@ -65,7 +65,7 @@
 
 ### 2.2 会话成本阶梯图示
 
-![会话成本下降曲线](images/fig2_session_cost_curve.png)
+![会话成本下降曲线](attachments/openai_gpt6_luna_market_expansion_analysis/fig2_session_cost_curve.png)
 
 > **机制解读**：对于依赖 Cline、Hermes Agent 等工具的开发者，原先 1 美元只能支撑约 22 次核心调试；降价后 1 美元可支撑 **43 次以上** 完整智能体执行。单会话成本落入“微感知区间”，直接释放了以前被预算压抑的长程自主调用需求。
 
@@ -89,7 +89,7 @@
 
 ### 3.2 规模扩张与流速激增图示
 
-![请求量与流速扩张对比](images/fig3_daily_request_acceleration.png)
+![请求量与流速扩张对比](attachments/openai_gpt6_luna_market_expansion_analysis/fig3_daily_request_acceleration.png)
 
 ### 3.3 需求价格弹性与总支出规模测算
 
@@ -129,7 +129,7 @@
 
 ### 4.1 高价值场景份额图示
 
-![场景市场份额图](images/fig4_task_token_market_share.png)
+![场景市场份额图](attachments/openai_gpt6_luna_market_expansion_analysis/fig4_task_token_market_share.png)
 
 > **业务洞察**：在代码审查、DevOps 脚本生成和常规代码实现中，开发团队原先出于成本考量可能会限制运行频率（例如仅在 PR 合并时触发一次）。降价后，团队开始将 Luna 嵌入 IDE 的每次保存、代码 Lint 审查和持续集成测试中，导致单客调用的基数几何级上升。
 
@@ -167,12 +167,12 @@
 
 ## 附录：复现与图表运行指南
 
-- **MATLAB 绘图脚本**：[report/generate_charts.m](file:///Users/pickmiu/Project/llm-market-data/report/generate_charts.m)  
+- **MATLAB 绘图脚本**：[generate_charts.m](attachments/openai_gpt6_luna_market_expansion_analysis/generate_charts.m)  
   包含完整的 4 组专业 MATLAB 图表生成逻辑，直接在 MATLAB 或 GNU Octave 控制台中运行：
   ```matlab
-  cd('report');
+  cd('report/attachments/openai_gpt6_luna_market_expansion_analysis');
   generate_charts;
   ```
-  即可自动生成并导出所有矢量高精度图表至 `report/images/` 目录。
-- **Python 图表脚本**：[report/plot_charts.py](file:///Users/pickmiu/Project/llm-market-data/report/plot_charts.py)  
+  即可自动生成并导出所有矢量高精度图表至当前附件目录。
+- **Python 图表脚本**：[plot_charts.py](attachments/openai_gpt6_luna_market_expansion_analysis/plot_charts.py)  
   基于当前虚拟环境的 Matplotlib 生成本报告中内嵌的图片。

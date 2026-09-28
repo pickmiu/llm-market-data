@@ -11,8 +11,7 @@ plt.rcParams['axes.linewidth'] = 0.8
 plt.rcParams['grid.color'] = '#f0f0f0'
 plt.rcParams['grid.linestyle'] = '--'
 
-output_dir = Path(__file__).resolve().parent / "images"
-output_dir.mkdir(parents=True, exist_ok=True)
+output_dir = Path(__file__).resolve().parent
 
 # -------------------------------------------------------------
 # Chart 1: Pricing vs Intelligence Parity
@@ -167,4 +166,4 @@ plt.tight_layout()
 plt.savefig(output_dir / "fig4_task_token_market_share.png")
 plt.close()
 
-print("[+] All charts successfully generated in report/images/")
+print("[+] All charts successfully generated in attachments directory")

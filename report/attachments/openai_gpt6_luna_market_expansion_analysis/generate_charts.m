@@ -4,10 +4,7 @@
 
 clear; clc; close all;
 
-output_dir = fullfile(fileparts(mfilename('fullpath')), 'images');
-if ~exist(output_dir, 'dir')
-    mkdir(output_dir);
-end
+output_dir = fileparts(mfilename('fullpath'));
 
 set(0, 'DefaultAxesFontSize', 10);
 set(0, 'DefaultAxesFontName', 'Helvetica');
