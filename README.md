@@ -3,15 +3,15 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code Review: Passed](https://img.shields.io/badge/Code%20Review-Passed-brightgreen.svg)](https://github.com/alibaba/open-code-review)
-[![Monitoring Since](https://img.shields.io/badge/Monitoring%20Since-2026--08--15-orange.svg)](#)
+[![Monitoring Since](https://img.shields.io/badge/Monitoring%20Since-2025--01--01-orange.svg)](#)
 
 [**中文说明**](README.md) | [**English Documentation**](README_EN.md)
 
 **LLM Market Data** 是一个自动化、轻量级的大语言模型（LLM）市场指标与使用数据聚合归档系统。本项目针对以 [OpenRouter](https://openrouter.ai/) 为代表的模型聚合市场，全天候自动化追踪模型定价、Token 消耗流速、应用分类排行榜、会话成本及历史每日使用排名，为 AI 市场分析、行业研究与定价决策提供可复现的结构化数据基础。
 
 > 📅 **数据监控与归档起始时间**：
-> * **历史每日排行归档**：始于 **2026-08-15**（支持按需自动增量回溯至平台成立起点 `2025-01-01`）
-> * **全维度每日快照监测**：始于 **2026-09-28**（涵盖全量定价、应用排名、场景花费与会话成本）
+> * **历史每日排行归档**：已归档从 **2025-01-01**（平台数据起点）到今天的全部历史数据（已累计归档 630+ 天）
+> * **全维度每日快照监测**：已从 **2026-09-28** 开始监控（涵盖全量定价、应用排名、场景花费与会话成本）
 
 ---
 

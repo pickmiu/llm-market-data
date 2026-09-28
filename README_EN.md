@@ -3,15 +3,15 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code Review: Passed](https://img.shields.io/badge/Code%20Review-Passed-brightgreen.svg)](https://github.com/alibaba/open-code-review)
-[![Monitoring Since](https://img.shields.io/badge/Monitoring%20Since-2026--08--15-orange.svg)](#)
+[![Monitoring Since](https://img.shields.io/badge/Monitoring%20Since-2025--01--01-orange.svg)](#)
 
 [**中文文档**](README.md) | [**English Documentation**](README_EN.md)
 
 **LLM Market Data** is an automated, lightweight aggregation and archival pipeline for Large Language Model (LLM) market intelligence and usage metrics. Targeting the [OpenRouter](https://openrouter.ai/) multi-provider ecosystem, it continuously tracks model pricing, token consumption velocity, specialized task leaderboards, per-session cost dynamics, and historical daily rankings—providing reproducible, structured datasets for AI market research and pricing strategy.
 
-> 📅 **Data Monitoring Coverage**:
-> * **Historical Daily Rankings Archive**: Since **2026-08-15** (with automated incremental backfill support to platform inception `2025-01-01`).
-> * **All-dimension Daily Snapshots**: Since **2026-09-28** (full model specs/pricing, coding tool apps, task spending categories, session costs).
+> 📅 **Data Tracking & Archive Inception**:
+> * **Historical Daily Rankings Archive**: Fully archived from **2025-01-01** (platform inception) to present (630+ days archived).
+> * **All-dimension Daily Snapshots**: Continuous monitoring initiated on **2026-09-28** (covers full model specs/pricing, coding tool apps, task spending categories, session costs).
 
 ---
 
