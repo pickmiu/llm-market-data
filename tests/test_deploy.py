@@ -16,6 +16,8 @@ def test_deploy_configs_exist():
     worker_text = worker_file.read_text()
     assert "workflow_dispatch" in worker_text or "dispatches" in worker_text
     assert "GITHUB_PAT" in worker_text
+    assert "async fetch(" in worker_text
+    assert "async scheduled(" in worker_text
 
     workflow_text = workflow_file.read_text()
     assert "workflow_dispatch:" in workflow_text

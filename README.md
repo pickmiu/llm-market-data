@@ -119,7 +119,7 @@ python cli.py sync --force
 
 配置后，可在 Actions 页面通过 `workflow_dispatch` 手动触发运行，或等待定时调度。
 
-### 2. （可选）Cloudflare Worker 定时主控
+### 2. （可选）Cloudflare Worker 定时与手动调度
 在 `deploy/cloudflare/` 目录下提供了一个开箱即用的调度 Worker：
 1. 仓库信息已默认预设为 `pickmiu/llm-market-data`，**仅需提供 GitHub 个人访问令牌 (`GITHUB_PAT`)**。
 2. 配置环境变量：直接在 `deploy/cloudflare/wrangler.toml` 的 `[vars]` 中填写 `GITHUB_PAT`（或在 Cloudflare 控制台添加环境变量 `GITHUB_PAT`）。
@@ -128,7 +128,21 @@ python cli.py sync --force
    cd deploy/cloudflare
    wrangler deploy
    ```
-4. Worker 将在每日 `00:30 UTC`（北京时间 08:30）自动触发 GitHub 采集流水线。
+4. **调度触发方式**：
+   * **自动定时**：每日 `00:30 UTC`（北京时间 08:30）通过 Cron 自动触发。
+   * **手动调用（HTTP API）**：部署后可直接通过浏览器访问或调用 Worker URL 手动触发，支持自定义参数：
+     ```bash
+     # 浏览器打开或命令行 GET 请求
+     curl https://<your-worker>.workers.dev/
+
+     # 带参数手动触发（如最近 7 天、最大 20 次请求）
+     curl "https://<your-worker>.workers.dev/?lookback_days=7&max_requests=20"
+
+     # 或通过 POST JSON 触发
+     curl -X POST https://<your-worker>.workers.dev/ \
+       -H "Content-Type: application/json" \
+       -d '{"lookback_days": 14, "max_requests": 30}'
+     ```
 
 ---
 
