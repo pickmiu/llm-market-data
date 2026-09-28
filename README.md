@@ -121,14 +121,14 @@ python cli.py sync --force
 
 ### 2. （可选）Cloudflare Worker 定时主控
 在 `deploy/cloudflare/` 目录下提供了一个开箱即用的调度 Worker：
-1. 配置 `wrangler.toml` 中的 `GITHUB_OWNER` 和 `GITHUB_REPO`。
-2. 注入 GitHub PAT 凭据：
+1. 仓库信息已默认预设为 `pickmiu/llm-market-data`，**仅需提供 GitHub 个人访问令牌 (`GITHUB_PAT`)**。
+2. 配置环境变量：直接在 `deploy/cloudflare/wrangler.toml` 的 `[vars]` 中填写 `GITHUB_PAT`（或在 Cloudflare 控制台添加环境变量 `GITHUB_PAT`）。
+3. 执行部署：
    ```bash
    cd deploy/cloudflare
-   wrangler secret put GITHUB_PAT
    wrangler deploy
    ```
-3. Worker 将在每日 `00:30 UTC`（北京时间 08:30）自动触发 GitHub 采集流水线。
+4. Worker 将在每日 `00:30 UTC`（北京时间 08:30）自动触发 GitHub 采集流水线。
 
 ---
 

@@ -1,18 +1,14 @@
 export default {
   async scheduled(event, env, ctx) {
-    const owner = env.GITHUB_OWNER;
-    const repo = env.GITHUB_REPO;
+    const owner = env.GITHUB_OWNER || "pickmiu";
+    const repo = env.GITHUB_REPO || "llm-market-data";
     const workflowFile = env.WORKFLOW_FILE || "collector.yml";
     const pat = env.GITHUB_PAT;
     const branch = env.GITHUB_REF || env.GITHUB_BRANCH || "main";
     const maxRequests = env.MAX_REQUESTS_PER_RUN || "40";
 
-    if (!owner || !repo || !pat) {
-      const missing = [];
-      if (!owner) missing.push("GITHUB_OWNER");
-      if (!repo) missing.push("GITHUB_REPO");
-      if (!pat) missing.push("GITHUB_PAT");
-      throw new Error(`Missing required env vars: ${missing.join(", ")}`);
+    if (!pat) {
+      throw new Error("Missing required env var: GITHUB_PAT (set via wrangler.toml [vars] or Cloudflare Secrets)");
     }
 
     try {
