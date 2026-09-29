@@ -44,11 +44,13 @@
 data/openrouter/
 ├── apps/               # AI 编程工具与应用消耗快照 (YYYY-MM-DD.json)
 ├── benchmarks/         # 模型基准跑分评估快照 (YYYY-MM-DD.json)
+├── coding_apps/        # Coding Agents 52周历史时序与最新排行快照 (YYYY-MM-DD.json)
 ├── models/             # 全量模型规格与定价快照 (YYYY-MM-DD.json)
 ├── performance/        # 模型首字延迟与生成吞吐测速 (YYYY-MM-DD.json)
 ├── rankings_daily/     # 历史每日 Token 排行榜分日明细 (YYYY-MM-DD.json)
 ├── session_cost/       # 典型交互会话成本估算 (YYYY-MM-DD.json)
-└── task_spend/         # 各专业任务分类下的模型开销份额 (YYYY-MM-DD.json)
+├── task_spend/         # 各专业任务分类下的模型开销份额 (YYYY-MM-DD.json)
+└── transcription/      # 语音转录 (ASR) 模型调用排行快照 (YYYY-MM-DD.json)
 ```
 
 ---

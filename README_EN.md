@@ -44,11 +44,13 @@ Collected datasets are structured in JSON format under `data/openrouter/`:
 data/openrouter/
 ├── apps/               # AI coding tools and apps leaderboard (YYYY-MM-DD.json)
 ├── benchmarks/         # Benchmark evaluation scores (YYYY-MM-DD.json)
+├── coding_apps/        # Coding agents 52-week token history & rankings (YYYY-MM-DD.json)
 ├── models/             # Full model specifications and pricing (YYYY-MM-DD.json)
 ├── performance/        # Latency and throughput benchmarks (YYYY-MM-DD.json)
 ├── rankings_daily/     # Daily token rankings by date (YYYY-MM-DD.json)
 ├── session_cost/       # Estimated cost per session (YYYY-MM-DD.json)
-└── task_spend/         # Model spending shares by task category (YYYY-MM-DD.json)
+├── task_spend/         # Model spending shares by task category (YYYY-MM-DD.json)
+└── transcription/      # Transcription (Speech-to-Text) rankings (YYYY-MM-DD.json)
 ```
 
 ---

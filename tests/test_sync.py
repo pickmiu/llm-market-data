@@ -10,6 +10,8 @@ from sources.openrouter.sync import (
     sync_session_cost,
     sync_benchmarks,
     sync_performance,
+    sync_transcription,
+    sync_coding_apps,
     sync_rankings_daily,
     run_sync
 )
@@ -199,6 +201,49 @@ def test_sync_rankings_daily_counts_failed_requests_toward_max_requests(tmp_path
     assert stats["requests_made"] == 2
     assert client.get_rankings_daily.call_count == 2
     assert len(stats["failed"]) == 2
+
+def test_sync_transcription_saves_file(tmp_path):
+    crawler = MagicMock()
+    crawler.fetch_transcription.return_value = {
+        "status": "ok",
+        "data": {"models": [{"model_permaslug": "openai/whisper-large-v3", "count": 8000000}]}
+    }
+    out_file = sync_transcription(crawler, tmp_path, target_date="2026-09-28")
+    assert out_file.exists()
+    content = json.loads(out_file.read_text())
+    assert content["date"] == "2026-09-28"
+    assert content["data"]["models"][0]["model_permaslug"] == "openai/whisper-large-v3"
+
+def test_sync_coding_apps_saves_file(tmp_path):
+    crawler = MagicMock()
+    crawler.fetch_coding_apps.return_value = {
+        "status": "ok",
+        "data": {
+            "history_chart": {"all": {"chartData": [{"x": "2026-09-21"}]}},
+            "leaderboard": [{"rank": 1, "app": {"title": "Hermes Agent"}}]
+        }
+    }
+    out_file = sync_coding_apps(crawler, tmp_path, target_date="2026-09-28")
+    assert out_file.exists()
+    content = json.loads(out_file.read_text())
+    assert content["date"] == "2026-09-28"
+    assert content["data"]["leaderboard"][0]["app"]["title"] == "Hermes Agent"
+
+def test_run_sync_transcription_and_coding_apps(tmp_path):
+    from unittest.mock import patch
+    with patch("sources.openrouter.sync.OpenRouterClient"), \
+         patch("sources.openrouter.sync.OpenRouterWebCrawler") as mock_crawler_cls:
+        crawler = mock_crawler_cls.return_value
+        crawler.fetch_transcription.return_value = {"status": "ok", "data": {"models": []}}
+        crawler.fetch_coding_apps.return_value = {"status": "ok", "data": {"history_chart": {}}}
+
+        res_trans = run_sync(data_dir=tmp_path, only="transcription")
+        assert "transcription" in res_trans
+        assert (tmp_path / "transcription").is_dir()
+
+        res_coding = run_sync(data_dir=tmp_path, only="coding_apps")
+        assert "coding_apps" in res_coding
+        assert (tmp_path / "coding_apps").is_dir()
 
 
 

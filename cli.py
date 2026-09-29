@@ -44,9 +44,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sync_parser.add_argument(
         "--only",
-        choices=["models", "rankings", "apps", "task_spend", "session_cost", "benchmarks", "performance"],
+        choices=["models", "rankings", "apps", "task_spend", "session_cost", "benchmarks", "performance", "transcription", "coding_apps"],
         default=None,
-        help="Sync only specified target (models, rankings, apps, task_spend, session_cost, benchmarks, or performance)"
+        help="Sync only specified target (models, rankings, apps, task_spend, session_cost, benchmarks, performance, transcription, or coding_apps)"
     )
 
     return parser
@@ -57,7 +57,7 @@ def main(args: list = None) -> int:
 
     if parsed.command == "sync":
         api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key and parsed.only not in ("models", "apps", "task_spend", "session_cost", "benchmarks", "performance"):
+        if not api_key and parsed.only not in ("models", "apps", "task_spend", "session_cost", "benchmarks", "performance", "transcription", "coding_apps"):
             print("[Warning] OPENROUTER_API_KEY is not set. Rankings daily API calls will fail.")
 
         data_dir = Path(__file__).resolve().parent / "data" / "openrouter"
@@ -87,6 +87,10 @@ def main(args: list = None) -> int:
                 print(f"  - Benchmarks snapshot: {results['benchmarks']}")
             if "performance" in results:
                 print(f"  - Performance snapshot: {results['performance']}")
+            if "transcription" in results:
+                print(f"  - Transcription snapshot: {results['transcription']}")
+            if "coding_apps" in results:
+                print(f"  - Coding apps history & leaderboard snapshot: {results['coding_apps']}")
             if "rankings_daily" in results:
                 stats = results["rankings_daily"]
                 print(f"  - Daily rankings: fetched {stats['fetched_days']} days, remaining missing {stats['remaining_days']} days")

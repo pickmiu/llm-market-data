@@ -167,6 +167,24 @@ def sync_performance(
     """Fetches and persists OpenRouter frontend Fastest models (performance) snapshot."""
     return _sync_frontend_snapshot(data_dir, "performance", crawler.fetch_performance, target_date, force, default_data=[])
 
+def sync_transcription(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    target_date: str,
+    force: bool = False
+) -> Optional[Path]:
+    """Fetches and persists OpenRouter Transcription (ASR models) leaderboard snapshot."""
+    return _sync_frontend_snapshot(data_dir, "transcription", crawler.fetch_transcription, target_date, force, default_data={})
+
+def sync_coding_apps(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    target_date: str,
+    force: bool = False
+) -> Optional[Path]:
+    """Fetches and persists OpenRouter Coding Agents 52-week historical time series and leaderboard snapshot."""
+    return _sync_frontend_snapshot(data_dir, "coding_apps", crawler.fetch_coding_apps, target_date, force, default_data={})
+
 def sync_rankings_daily(
     client: OpenRouterClient,
     data_dir: Path,
@@ -288,7 +306,19 @@ def run_sync(
         if perf_file:
             results["performance"] = str(perf_file)
 
-    # 7. Sync rankings daily (API)
+    # 7. Sync transcription (Frontend SSR/Table)
+    if only in (None, "transcription"):
+        transcription_file = sync_transcription(crawler, data_dir, today_str, force=force)
+        if transcription_file:
+            results["transcription"] = str(transcription_file)
+
+    # 8. Sync coding apps history & rankings (Frontend API)
+    if only in (None, "coding_apps"):
+        coding_apps_file = sync_coding_apps(crawler, data_dir, today_str, force=force)
+        if coding_apps_file:
+            results["coding_apps"] = str(coding_apps_file)
+
+    # 9. Sync rankings daily (API)
     if only in (None, "rankings"):
         if end_date:
             e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
