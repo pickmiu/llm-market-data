@@ -326,6 +326,13 @@ class ModelReportGenerator:
 
         doc = []
         doc.append("## 三、 全平台任务场景大类与小类分布全景\n\n")
+        window_days = spend_data.get("windowDays", 30)
+        doc.append(
+            f"> [!NOTE]\n"
+            f"> **数据统计时间窗口说明**：全平台任务场景大类与小类分布数据来源于 OpenRouter 官方细分任务开销接口（`task-spend`）。"
+            f"根据接口元数据定义，其统计窗口为**过去 {window_days} 天滚动消费支出（Rolling {window_days}-Day Window，`windowDays: {window_days}`）**，"
+            f"以全平台各场景所消耗的美元金额为权重统计。该统计平滑了短期偶然波动，真实反映各模型在垂直生产场景与工作流中的中长期落地渗透情况（与周度榜单的 7 天滚动用量形成互补）。\n\n"
+        )
 
         # 1. 宏观大类分布概览
         doc.append("### 1. 宏观大类分布概览\n\n")
@@ -740,9 +747,9 @@ class ModelReportGenerator:
         doc.append("---\n\n")
 
         # ==========================================
-        # 五、 价格测算方法论与计算公式（放最后）
+        # 五、 价格测算与分析方法论（放最后）
         # ==========================================
-        doc.append("## 五、 价格测算方法论与计算公式\n\n")
+        doc.append("## 五、 价格测算与分析方法论\n\n")
         doc.append("设模型定价与调用结构参数如下：\n")
         doc.append("- $P_{\\text{prompt}}$：非缓存输入 Token 标称单价（$\\$/\\text{M Tokens}$）\n")
         doc.append("- $P_{\\text{cache\\_read}}$：KV 缓存命中读取单价（$\\$/\\text{M Tokens}$）\n")
@@ -761,8 +768,11 @@ class ModelReportGenerator:
         doc.append("**5. 首选偏好应用流量份额（Top Apps Traffic Share）**：\n")
         doc.append("OpenRouter 官方模型详情页中的 Top Apps 展示了各客户端自接入以来的全量累计消耗。为消除绝对累计量与 7 天统计周期之间的量纲差异，报告取前序主要应用的流量比重计算相对偏好份额：\n")
         doc.append("$$\\text{Share}_i = \\frac{\\text{Tokens}_i}{\\sum_{k \\in \\text{Top Apps}} \\text{Tokens}_k} \\times 100\\%$$\n\n")
-        doc.append("**6. 优势细分场景（Dominant Task Scenario）**：\n")
-        doc.append("依据 OpenRouter 官方细分任务开销接口（`task-spend`）统计。在各模型详细指标中给出该模型市场份额最高的小类细分标签（若无公开细分数据则不展示）。\n\n")
+        spend_win_days = self.task_spend.get("spend", {}).get("windowDays", 30)
+        doc.append("**6. 优势细分场景与场景分布统计口径（Task Scenario Methodology）**：\n")
+        doc.append(f"- **数据源与接口**：来自 OpenRouter 官方细分任务支出接口（`GET /api/frontend/v1/rankings/task-spend`）。\n")
+        doc.append(f"- **统计时间窗口**：根据官方接口返回的 `windowDays: {spend_win_days}` 字段，统计基于**过去 {spend_win_days} 天滚动窗口（Rolling {spend_win_days}-Day Window）**的全平台美元消费支出（Spend Share），而非 Token 数量。\n")
+        doc.append(f"- **指标作用与互补性**：核心榜单聚焦 7 天滚动用量以捕捉实时流量爆发；任务场景分布采用 30 天统计窗口以平滑短期偶然波动，揭示各模型在垂直领域生产环境与智能体流程中的中长期商业渗透与核心优势壁垒。各模型详细指标中的“优势细分场景”为该模型在过去 {spend_win_days} 天内取得市场份额第一（Top 1）的细分任务标签（若无公开细分数据则不展示）。\n\n")
 
         # Write file
         content = "".join(doc)
