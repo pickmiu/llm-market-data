@@ -157,14 +157,17 @@ Ready-to-deploy Worker located in `deploy/cloudflare/`:
    wrangler deploy
    ```
 4. **Trigger Methods**:
-   * **Scheduled Cron**: Triggers daily at `00:30 UTC` (08:30 Beijing Time).
-   * **Manual HTTP Trigger**: Check status at `/` or trigger via `/trigger` (or `/trigger/sync`) with optional parameters:
+   * **Scheduled Cron**: Triggers daily at `00:30 UTC` (08:30 Beijing Time) for market data; **automatically generates Weekly Top 5 Report on Mondays** into `report/`.
+   * **Manual HTTP Trigger**: Check status at `/` or trigger via `/trigger` with optional parameters:
      ```bash
      # Check worker status (no trigger)
      curl https://<your-worker>.workers.dev/
 
-     # Manually trigger synchronization
+     # Trigger daily market data synchronization
      curl https://<your-worker>.workers.dev/trigger
+
+     # Force generate Weekly Top 5 Report
+     curl https://<your-worker>.workers.dev/trigger/report
 
      # Trigger with custom parameters
      curl "https://<your-worker>.workers.dev/trigger?lookback_days=7&max_requests=20"

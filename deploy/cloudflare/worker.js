@@ -22,6 +22,11 @@ async function triggerDispatch(env, customInputs = {}) {
     payload.inputs.lookback_days = String(lookback);
   }
 
+  const generateReport = customInputs.generate_report ?? env.GENERATE_REPORT;
+  if (generateReport !== undefined && generateReport !== null && generateReport !== "") {
+    payload.inputs.generate_report = String(generateReport);
+  }
+
   const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`;
   const response = await fetch(url, {
     method: "POST",
@@ -53,8 +58,16 @@ export default {
     const cron = rawCron.trim().replace(/\s+/g, " ");
     console.log(`[Cron Triggered] 收到表达式: "${rawCron}", 归一化: "${cron}"`);
 
+    // 复用现有每日调度：每周一 (UTC Monday, getUTCDay() === 1) 额外生成周报
+    const isMonday = new Date().getUTCDay() === 1;
+    const customInputs = {};
+    if (isMonday) {
+      customInputs.generate_report = "true";
+      console.log(`[Cron Scheduled] 检测到周一调度 (UTC Monday)，自动启用 generate_report=true 生成 Weekly Top 5 Report`);
+    }
+
     try {
-      const result = await triggerDispatch(env);
+      const result = await triggerDispatch(env, customInputs);
       console.log(`[Cron Dispatch] 成功触发数据同步: ${result.message}`);
     } catch (err) {
       console.error(`[Cron Dispatch] 触发异常: ${err.message}`);
@@ -83,13 +96,21 @@ export default {
       });
     }
 
-    // 手动触发接口：支持 /trigger, /trigger/sync, /trigger/collector
+    // 手动触发接口：支持 /trigger, /trigger/sync, /trigger/collector, /trigger/report, /trigger/weekly
     if (
       url.pathname === "/trigger" ||
       url.pathname === "/trigger/sync" ||
-      url.pathname === "/trigger/collector"
+      url.pathname === "/trigger/collector" ||
+      url.pathname === "/trigger/report" ||
+      url.pathname === "/trigger/weekly"
     ) {
       const customInputs = {};
+      if (url.pathname === "/trigger/report" || url.pathname === "/trigger/weekly") {
+        customInputs.generate_report = "true";
+      }
+      if (url.searchParams.has("generate_report")) {
+        customInputs.generate_report = url.searchParams.get("generate_report");
+      }
       if (url.searchParams.has("max_requests")) {
         customInputs.max_requests = url.searchParams.get("max_requests");
       }

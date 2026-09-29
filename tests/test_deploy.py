@@ -18,8 +18,12 @@ def test_deploy_configs_exist():
     assert "GITHUB_PAT" in worker_text
     assert "async fetch(" in worker_text
     assert "async scheduled(" in worker_text
+    assert "isMonday" in worker_text
+    assert "generate_report" in worker_text
 
     workflow_text = workflow_file.read_text()
     assert "workflow_dispatch:" in workflow_text
     assert "python cli.py sync" in workflow_text
     assert "OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}" in workflow_text
+    assert "generate_weekly_top5_report.py" in workflow_text
+    assert "git add data/ report/" in workflow_text
