@@ -138,43 +138,127 @@ class ModelReportGenerator:
             logging.warning("Failed to fetch official rankings/models: %s", e)
         return []
 
+    @staticmethod
+    def _parse_token_unit(s: str) -> float:
+        s = s.strip()
+        if not s:
+            return 0.0
+        if s.endswith("T"):
+            return float(s[:-1]) * 1e12
+        if s.endswith("B"):
+            return float(s[:-1]) * 1e9
+        if s.endswith("M"):
+            return float(s[:-1]) * 1e6
+        if s.endswith("K"):
+            return float(s[:-1]) * 1e3
+        return float(s)
+
     def scrape_model_apps_realtime(self, slug: str) -> List[Dict[str, Any]]:
         """
         Scrapes real-time Top Apps from OpenRouter model page.
         Does not persist to disk, returning directly as requested.
+        Calculates relative traffic share percentage for each app.
         """
         clean_slug = re.sub(r"-\d{8}$", "", slug)
         candidates = [clean_slug, slug]
-        pattern = re.compile(
-            r'<div class="col-span-1[^"]*">(\d+)<!-- -->\.</div>.*?'
-            r'<a [^>]*href="([^"]+)"[^>]*>(.*?)<svg.*?'
-            r'(?:<span[^>]*>(.*?)</span>.*?)?'
-            r'<span>([0-9\.]+[KMBT]?)</span><span class="ml-1">tokens</span>',
-            re.DOTALL
-        )
+        if clean_slug == slug:
+            candidates = [slug]
 
         for s in candidates:
             url = f"https://openrouter.ai/models/{s}"
             try:
                 resp = self.session.get(url, timeout=10)
-                if resp.status_code == 200:
-                    matches = pattern.findall(resp.text)
-                    if matches:
-                        results = []
-                        for rank, href, raw_name, raw_desc, tokens in matches:
-                            clean_name = re.sub(r"<[^>]+>", "", raw_name).strip()
-                            clean_desc = re.sub(r"<[^>]+>", "", raw_desc or "").strip()
-                            clean_desc = clean_desc.replace("&amp;", "&").replace("&#x27;", "'")
+                if resp.status_code != 200:
+                    continue
+                text = resp.text
+
+                # Strategy 1: Parse from Next.js RSC dehydrated state for highest precision
+                idx = text.find("top_apps")
+                if idx != -1:
+                    p_start = text.rfind("self.__next_f.push", 0, idx)
+                    p_end = text.find("</script>", idx)
+                    if p_start != -1 and p_end != -1:
+                        chunk = text[p_start:p_end]
+                        m = re.match(r"self\.__next_f\.push\(\[(\d+),\s*\"(.*)\"\]\)", chunk, re.DOTALL)
+                        if m:
+                            unescaped = m.group(2).encode("utf-8").decode("unicode_escape")
+                            apps_idx = unescaped.find('"top_apps":[')
+                            if apps_idx != -1:
+                                bracket_start = unescaped.find("[", apps_idx)
+                                depth = 0
+                                bracket_end = -1
+                                for i in range(bracket_start, len(unescaped)):
+                                    if unescaped[i] == "[":
+                                        depth += 1
+                                    elif unescaped[i] == "]":
+                                        depth -= 1
+                                        if depth == 0:
+                                            bracket_end = i + 1
+                                            break
+                                if bracket_end != -1:
+                                    try:
+                                        apps_raw = json.loads(unescaped[bracket_start:bracket_end])
+                                        tot_tok = sum(float(a.get("total_tokens", 0)) for a in apps_raw)
+                                        results = []
+                                        for a in apps_raw:
+                                            tok = float(a.get("total_tokens", 0))
+                                            pct = (tok / tot_tok * 100.0) if tot_tok > 0 else 0.0
+                                            title = a.get("app", {}).get("title") or "Unknown"
+                                            desc = a.get("app", {}).get("description") or ""
+                                            if tok >= 1e12:
+                                                tok_str = f"{tok/1e12:.2f}T"
+                                            elif tok >= 1e9:
+                                                tok_str = f"{tok/1e9:.1f}B"
+                                            elif tok >= 1e6:
+                                                tok_str = f"{tok/1e6:.1f}M"
+                                            else:
+                                                tok_str = f"{tok:,.0f}"
+                                            results.append({
+                                                "rank": int(a.get("rank", 0)),
+                                                "name": title,
+                                                "description": desc,
+                                                "tokens": tok_str,
+                                                "raw_tokens": tok,
+                                                "share_pct": pct
+                                            })
+                                        if results:
+                                            return results
+                                    except Exception as e:
+                                        logging.debug("RSC JSON parsing exception for %s: %s", url, e)
+
+                # Strategy 2: HTML grid regex fallback
+                row_pattern = re.compile(
+                    r'<div class="grid w-full grid-cols-12 items-center">(.*?)</div>\s*</div>\s*</div>',
+                    re.DOTALL
+                )
+                rows = row_pattern.findall(text)
+                if rows:
+                    results = []
+                    for row in rows:
+                        r_m = re.search(r"(\d+)<!-- -->\.", row)
+                        name_m = re.search(r"<a [^>]*>(.*?)<svg", row)
+                        tok_m = re.search(r"<span>([0-9\.]+[KMBT]?)</span>\s*<span[^>]*>tokens</span>", row)
+                        if r_m and name_m and tok_m:
+                            rank = int(r_m.group(1))
+                            clean_name = re.sub(r"<[^>]+>", "", name_m.group(1)).strip()
+                            tokens_str = tok_m.group(1)
+                            num_tok = self._parse_token_unit(tokens_str)
                             results.append({
-                                "rank": int(rank),
+                                "rank": rank,
                                 "name": clean_name,
-                                "description": clean_desc,
-                                "tokens": tokens
+                                "description": "",
+                                "tokens": tokens_str,
+                                "raw_tokens": num_tok
                             })
+                    if results:
+                        tot = sum(r["raw_tokens"] for r in results)
+                        for r in results:
+                            r["share_pct"] = (r["raw_tokens"] / tot * 100.0) if tot > 0 else 0.0
                         return results
             except Exception as e:
                 logging.warning("Failed scraping %s: %s", url, e)
         return []
+
 
     def get_model_metadata(self, slug: str) -> Dict[str, Any]:
         """Resolves standard catalog metadata and pricing for a model slug."""
@@ -191,19 +275,21 @@ class ModelReportGenerator:
         return m or {}
 
     def get_task_scenarios_for_model(self, slug: str) -> Dict[str, Any]:
-        """Extracts scenario and task distribution for a model from task_spend snapshot."""
+        """Extracts dominant macro category and top subtask tag for a model from task_spend snapshot."""
         clean = slug.split(":")[0]
         base_clean = re.sub(r"-\d{8}$", "", clean)
         candidates = {slug, clean, base_clean}
 
         spend_data = self.task_spend.get("spend", {})
-        macro_shares = {}
-        for mc in spend_data.get("macroCategories", []):
-            macro_shares[mc.get("key")] = mc.get("spendShare", 0.0)
-
         tasks = spend_data.get("tasks", [])
         matched_tasks = []
-        macro_breakdown = {"code": 0.0, "agent": 0.0, "data": 0.0, "general": 0.0}
+
+        macro_name_map = {
+            "code": "编程开发",
+            "agent": "Agent 代理",
+            "data": "数据处理",
+            "general": "通用任务"
+        }
 
         for t in tasks:
             macro = t.get("macroCategory", "general")
@@ -212,18 +298,150 @@ class ModelReportGenerator:
                 m_name = m_item.get("model", "")
                 if any(c in m_name for c in candidates):
                     share = m_item.get("share", 0.0)
-                    macro_breakdown[macro] = max(macro_breakdown.get(macro, 0.0), share)
                     matched_tasks.append({
                         "tag": tag,
                         "macro": macro,
+                        "macro_label": macro_name_map.get(macro, macro),
                         "share": share
                     })
 
         matched_tasks = sorted(matched_tasks, key=lambda x: x["share"], reverse=True)
+        top_task = matched_tasks[0] if matched_tasks else None
+        top_macro = top_task["macro_label"] if top_task else ""
+        top_tag = top_task["tag"] if top_task else ""
+
         return {
-            "top_tasks": matched_tasks[:5],
-            "macro_breakdown": macro_breakdown
+            "top_macro": top_macro,
+            "top_tag": top_tag
         }
+
+    def generate_task_scenarios_section(self) -> List[str]:
+        """Generates markdown section detailing full task scenarios, macro categories, and top models."""
+        spend_data = self.task_spend.get("spend", {})
+        macro_categories = spend_data.get("macroCategories", [])
+        tasks = spend_data.get("tasks", [])
+
+        if not macro_categories or not tasks:
+            return []
+
+        doc = []
+        doc.append("## 三、 全平台任务场景大类与小类分布全景\n\n")
+
+        # 1. 宏观大类分布概览
+        doc.append("### 1. 宏观大类分布概览\n\n")
+        doc.append("| 宏观大类 | 标识 Key | 全平台支出占比 | 细分小类数量 | 核心特征 |\n")
+        doc.append("|:---|:---:|:---:|:---:|:---|\n")
+
+        macro_meta_info = {
+            "general": ("General 通用与认知", "分类打标、长文写作、知识问答、数学推演等"),
+            "agent": ("Agent 智能体代理", "复杂工作流自驱动、多步规划、工具调度分发等"),
+            "code": ("Code 软件工程开发", "代码实现、调试排错、仓库扫描、终端执行等"),
+            "data": ("Data 数据处理加工", "非结构化数据抽取、格式清洗与转换")
+        }
+
+        from collections import defaultdict
+        tasks_by_macro = defaultdict(list)
+        for t in tasks:
+            tasks_by_macro[t.get("macroCategory", "general")].append(t)
+
+        sorted_macros = sorted(macro_categories, key=lambda x: x.get("spendShare", 0.0), reverse=True)
+        for m in sorted_macros:
+            k = m.get("key", "")
+            share = m.get("spendShare", 0.0) * 100
+            sub_count = len(tasks_by_macro.get(k, []))
+            name, feat = macro_meta_info.get(k, (m.get("label", k), "相关业务场景"))
+            doc.append(f"| **{name}** | `{k}` | **{share:.2f}%** | {sub_count} 个 | {feat} |\n")
+
+        doc.append("\n### 2. 全量大类与小类明细表\n\n")
+
+        task_desc_map = {
+            # Agent
+            "agent:workflow_execution": "复杂自动化工作流编排与执行",
+            "agent:multi_step_planning": "多步推理、目标规划与决策分解",
+            "agent:tool_dispatch": "外部 Tool/Function 调度与参数组装",
+            "agent:web_search": "联网检索与外部信息整合",
+            "agent:memory_extraction": "会话长期记忆与状态提炼",
+            # Code
+            "code:general_impl": "通用业务逻辑与功能代码实现",
+            "code:debugging": "代码缺陷排查与单元测试修复",
+            "code:file_read_write": "单文件/跨文件读写与精准修改",
+            "code:review_security": "代码评审与安全漏洞静态审查",
+            "code:shell_execution": "Shell/Bash 终端指令与脚本执行",
+            "code:frontend_ui": "前端界面、样式与组件开发",
+            "code:repo_scan": "代码仓库全局扫描与上下文构建",
+            "code:devops_config": "Dockerfile/CI-CD/K8s 配置文件编写",
+            "code:sql_database": "数据库 SQL 编写与 Schema 设计",
+            # Data
+            "data:extraction": "非结构化文本/文档关键信息抽取",
+            "data:transformation": "数据清洗、格式转换与 Schema 映射",
+            # General
+            "classification_tagging": "文本分类、意图识别与内容打标",
+            "content_writing": "专业文章、长篇文案与创意写作",
+            "roleplay_fiction": "虚拟角色扮演与小说剧情虚构",
+            "qa_knowledge": "事实知识库问答与精准问答",
+            "conversational_reply": "开放域多轮自然对话交互",
+            "research_report": "行业深度研究报告与综合研报撰写",
+            "customer_support": "智能客户服务与工单处理支持",
+            "summarization": "长文档、会议纪要与摘要总结",
+            "math": "复杂数学推演与公式计算求解",
+            "security_audit": "安全合规审计与系统安全检测",
+            "finance_trading": "金融财报分析与量化交易策略",
+            "translation": "专业多语言翻译与本地化",
+            "devops": "通用运维诊断与环境故障咨询",
+        }
+
+        macro_detail_headers = {
+            "agent": "Agent 智能体类",
+            "code": "Code 软件工程类",
+            "data": "Data 数据处理类",
+            "general": "General 通用与专业认知类"
+        }
+
+        def clean_model_name(raw_slug: str) -> str:
+            clean = raw_slug.split(":")[0]
+            base = re.sub(r"-\d{8}$", "", clean)
+            meta = self.get_model_metadata(raw_slug) or self.get_model_metadata(clean) or self.get_model_metadata(base)
+            name = meta.get("name") if meta else None
+            if not name:
+                name = clean.split("/")[-1]
+            name = re.sub(r"^[^:]+:\s*", "", name)
+            name = re.sub(r"\s*\((batch|free)\)", "", name, flags=re.I).strip()
+            return name
+
+        # Presentation order: descending order by spendShare
+        sorted_macros = sorted(macro_categories, key=lambda x: x.get("spendShare", 0.0), reverse=True)
+
+        for idx, m_info in enumerate(sorted_macros, 1):
+            k = m_info.get("key", "")
+            m_share = m_info.get("spendShare", 0.0) * 100
+            m_header = macro_detail_headers.get(k, m_info.get("label", k))
+            doc.append(f"#### 2.{idx} {m_header}（全平台支出：{m_share:.2f}%）\n\n")
+            doc.append("| 细分小类标签 (`tag`) | 中文业务场景 | 全平台支出占比 | 场景领跑模型（市场份额） |\n")
+            doc.append("|:---|:---|:---:|:---|\n")
+
+            sub_tasks = tasks_by_macro.get(k, [])
+            sub_tasks = sorted(sub_tasks, key=lambda x: x.get("spendShareOfTotal", 0.0), reverse=True)
+            for st in sub_tasks:
+                tag = st.get("tag", "")
+                desc = task_desc_map.get(tag, "细分专业场景")
+                t_share = st.get("spendShareOfTotal", 0.0) * 100
+                models = st.get("models", [])
+                top_m = models[0] if models else None
+                if top_m:
+                    m_title = clean_model_name(top_m.get("model", ""))
+                    m_pct = top_m.get("share", 0.0) * 100
+                    if tag == "code:repo_scan":
+                        top_repr = f"**{m_title} ({m_pct:.1f}%)**"
+                    else:
+                        top_repr = f"{m_title} ({m_pct:.1f}%)"
+                else:
+                    top_repr = "无公开模型"
+                doc.append(f"| `{tag}` | {desc} | {t_share:.2f}% | {top_repr} |\n")
+            doc.append("\n")
+
+        doc.append("---\n\n")
+        return doc
+
 
     def compute_model_metrics(self, official_items: List[Dict[str, Any]], rolling_dates: List[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """
@@ -406,35 +624,29 @@ class ModelReportGenerator:
         doc.append("## 一、 核心榜单数据（榜单与首选应用）\n\n")
 
         doc.append("### 1. Token 物理使用量前 5 模型\n\n")
-        doc.append("| 排名 | 模型名称 | 7天 Token 消耗 | 7天消费金额 (百万美元) | 实际有效单价 ($/M) | I/O 比率 | 首选偏好应用 (Top 1) | 主要任务场景 |\n")
-        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---|:---|\n")
+        doc.append("| 排名 | 模型名称 | 7天 Token 消耗 | 7天消费金额 (百万美元) | 实际有效单价 ($/M) | I/O 比率 | 首选偏好应用 (Top 1 份额) |\n")
+        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---|\n")
         for i, m in enumerate(top5_tokens, 1):
             tok_str = f"{m['total_tokens'] / 1e12:.3f} T" if m['total_tokens'] >= 1e12 else f"{m['total_tokens'] / 1e9:.2f} B"
             spend_m = m['spend_usd'] / 1e6
             spend_str = f"{spend_m:.4f}" if 0 < spend_m < 0.01 else f"{spend_m:.3f}"
             apps = model_apps_map.get(m['slug'], [])
-            app_str = f"{apps[0]['name']} ({apps[0]['tokens']})" if apps else "N/A"
-            scenarios = model_scenarios_map.get(m['slug'], {})
-            top_t = scenarios.get("top_tasks", [])
-            task_str = f"`{top_t[0].get('tag', 'general')}` ({top_t[0].get('share', 0.0)*100:.1f}%)" if top_t else "通用"
+            app_str = f"{apps[0]['name']} ({apps[0].get('share_pct', 0.0):.1f}%)" if apps else "N/A"
             doc.append(
-                f"| {i} | {m['name']} | **{tok_str}** | {spend_str} | **${m['empirical_eff_p_per_m']:.4f}** | {m['io_ratio']:.1f}:1 | {app_str} | {task_str} |\n"
+                f"| {i} | {m['name']} | **{tok_str}** | {spend_str} | **${m['empirical_eff_p_per_m']:.4f}** | {m['io_ratio']:.1f}:1 | {app_str} |\n"
             )
 
         doc.append("\n### 2. 消费金额前 5 模型\n\n")
-        doc.append("| 排名 | 模型名称 | 7天消费金额 (百万美元) | 7天 Token 消耗 | 实际有效单价 ($/M) | I/O 比率 | 首选偏好应用 (Top 1) | 主要任务场景 |\n")
-        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---|:---|\n")
+        doc.append("| 排名 | 模型名称 | 7天消费金额 (百万美元) | 7天 Token 消耗 | 实际有效单价 ($/M) | I/O 比率 | 首选偏好应用 (Top 1 份额) |\n")
+        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---|\n")
         for i, m in enumerate(top5_spend, 1):
             tok_str = f"{m['total_tokens'] / 1e12:.3f} T" if m['total_tokens'] >= 1e12 else f"{m['total_tokens'] / 1e9:.2f} B"
             spend_m = m['spend_usd'] / 1e6
             spend_str = f"{spend_m:.4f}" if 0 < spend_m < 0.01 else f"{spend_m:.3f}"
             apps = model_apps_map.get(m['slug'], [])
-            app_str = f"{apps[0]['name']} ({apps[0]['tokens']})" if apps else "N/A"
-            scenarios = model_scenarios_map.get(m['slug'], {})
-            top_t = scenarios.get("top_tasks", [])
-            task_str = f"`{top_t[0].get('tag', 'general')}` ({top_t[0].get('share', 0.0)*100:.1f}%)" if top_t else "通用"
+            app_str = f"{apps[0]['name']} ({apps[0].get('share_pct', 0.0):.1f}%)" if apps else "N/A"
             doc.append(
-                f"| {i} | {m['name']} | **{spend_str}** | {tok_str} | **${m['empirical_eff_p_per_m']:.4f}** | {m['io_ratio']:.1f}:1 | {app_str} | {task_str} |\n"
+                f"| {i} | {m['name']} | **{spend_str}** | {tok_str} | **${m['empirical_eff_p_per_m']:.4f}** | {m['io_ratio']:.1f}:1 | {app_str} |\n"
             )
         doc.append("\n---\n\n")
 
@@ -448,8 +660,6 @@ class ModelReportGenerator:
             slug = m["slug"]
             apps = model_apps_map.get(slug, [])
             scenarios = model_scenarios_map.get(slug, {})
-            macro_b = scenarios.get("macro_breakdown", {})
-            top_t = scenarios.get("top_tasks", [])
             spend_m = m['spend_usd'] / 1e6
 
             doc.append(f"#### 1.{i} {m['name']} (`{slug}`)\n\n")
@@ -459,14 +669,16 @@ class ModelReportGenerator:
             doc.append(f"- **单价指标**：标称输入 `${m['prompt_p_per_m']:.2f}/M` | 标称输出 `${m['comp_p_per_m']:.2f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
             doc.append(f"- **有效单价与节省**：标称综合单价 `${m['nominal_p_per_m']:.4f}/M` | **实际有效单价 `${m['empirical_eff_p_per_m']:.4f}/M`** | 缓存与综合节省率 `{m['savings_pct']:.1f}%`\n")
             if apps:
-                app_items = [f"{idx}. **{a['name']}**（流量消耗 `{a['tokens']}` tokens）" for idx, a in enumerate(apps[:2], 1)]
+                app_items = [
+                    f"{idx}. **{a['name']}**（流量份额 `{a.get('share_pct', 0.0):.1f}%`，累计 `{a['tokens']}` tokens）"
+                    for idx, a in enumerate(apps[:2], 1)
+                ]
                 doc.append(f"- **偏好应用 (Top 2)**：{' | '.join(app_items)}\n")
             else:
                 doc.append(f"- **偏好应用 (Top 2)**：无公开应用数据\n")
-            doc.append(f"- **场景分布占比**：Agent 代理 `{(macro_b.get('agent', 0)*100):.1f}%` | 编程开发 `{(macro_b.get('code', 0)*100):.1f}%` | 数据处理 `{(macro_b.get('data', 0)*100):.1f}%` | 通用任务 `{(macro_b.get('general', 0)*100):.1f}%`\n")
-            if top_t:
-                task_items = [f"`{t.get('tag')}` ({t.get('share', 0)*100:.1f}%)" for t in top_t[:3]]
-                doc.append(f"- **高频任务标签**：{', '.join(task_items)}\n")
+            top_tag = scenarios.get("top_tag")
+            if top_tag:
+                doc.append(f"- **优势细分场景**：`{top_tag}`\n")
             doc.append("\n")
 
         doc.append("### 2. 消费金额前 5 模型指标\n\n")
@@ -474,8 +686,6 @@ class ModelReportGenerator:
             slug = m["slug"]
             apps = model_apps_map.get(slug, [])
             scenarios = model_scenarios_map.get(slug, {})
-            macro_b = scenarios.get("macro_breakdown", {})
-            top_t = scenarios.get("top_tasks", [])
             spend_m = m['spend_usd'] / 1e6
 
             doc.append(f"#### 2.{i} {m['name']} (`{slug}`)\n\n")
@@ -485,22 +695,31 @@ class ModelReportGenerator:
             doc.append(f"- **单价指标**：标称输入 `${m['prompt_p_per_m']:.2f}/M` | 标称输出 `${m['comp_p_per_m']:.2f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
             doc.append(f"- **有效单价与节省**：标称综合单价 `${m['nominal_p_per_m']:.4f}/M` | **实际有效单价 `${m['empirical_eff_p_per_m']:.4f}/M`** | 缓存与综合节省率 `{m['savings_pct']:.1f}%`\n")
             if apps:
-                app_items = [f"{idx}. **{a['name']}**（流量消耗 `{a['tokens']}` tokens）" for idx, a in enumerate(apps[:2], 1)]
+                app_items = [
+                    f"{idx}. **{a['name']}**（流量份额 `{a.get('share_pct', 0.0):.1f}%`，累计 `{a['tokens']}` tokens）"
+                    for idx, a in enumerate(apps[:2], 1)
+                ]
                 doc.append(f"- **偏好应用 (Top 2)**：{' | '.join(app_items)}\n")
             else:
                 doc.append(f"- **偏好应用 (Top 2)**：无公开应用数据\n")
-            doc.append(f"- **场景分布占比**：Agent 代理 `{(macro_b.get('agent', 0)*100):.1f}%` | 编程开发 `{(macro_b.get('code', 0)*100):.1f}%` | 数据处理 `{(macro_b.get('data', 0)*100):.1f}%` | 通用任务 `{(macro_b.get('general', 0)*100):.1f}%`\n")
-            if top_t:
-                task_items = [f"`{t.get('tag')}` ({t.get('share', 0)*100:.1f}%)" for t in top_t[:3]]
-                doc.append(f"- **高频任务标签**：{', '.join(task_items)}\n")
+            top_tag = scenarios.get("top_tag")
+            if top_tag:
+                doc.append(f"- **优势细分场景**：`{top_tag}`\n")
             doc.append("\n")
 
         doc.append("---\n\n")
 
         # ==========================================
-        # 三、 价格计算所用参数明细表（注明采用的参数与具体数值）
+        # 三、 全平台任务场景大类与小类分布全景
         # ==========================================
-        doc.append("## 三、 价格计算所用参数明细表\n\n")
+        scenario_section = self.generate_task_scenarios_section()
+        if scenario_section:
+            doc.extend(scenario_section)
+
+        # ==========================================
+        # 四、 价格计算所用参数明细表（注明采用的参数与具体数值）
+        # ==========================================
+        doc.append("## 四、 价格计算所用参数明细表\n\n")
         doc.append("| 模型 Permaslug | 标称输入价 $P_{\\text{prompt}}$ ($/M) | 缓存读取价 $P_{\\text{cache\\_read}}$ ($/M) | 标称输出价 $P_{\\text{comp}}$ ($/M) | AA 加权输入价 $P_{\\text{wip}}$ ($/M) | 7天输入Token ($N_p$) | 7天输出Token ($N_c$) | I/O比率 ($r$) | 标称综合价 ($/M) | 实际结算单价 ($/M) | 实际总消费 (百万美元) |\n")
         doc.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
 
@@ -521,9 +740,9 @@ class ModelReportGenerator:
         doc.append("---\n\n")
 
         # ==========================================
-        # 四、 价格测算方法论与计算公式（放最后）
+        # 五、 价格测算方法论与计算公式（放最后）
         # ==========================================
-        doc.append("## 四、 价格测算方法论与计算公式\n\n")
+        doc.append("## 五、 价格测算方法论与计算公式\n\n")
         doc.append("设模型定价与调用结构参数如下：\n")
         doc.append("- $P_{\\text{prompt}}$：非缓存输入 Token 标称单价（$\\$/\\text{M Tokens}$）\n")
         doc.append("- $P_{\\text{cache\\_read}}$：KV 缓存命中读取单价（$\\$/\\text{M Tokens}$）\n")
@@ -539,6 +758,11 @@ class ModelReportGenerator:
         doc.append("$$\\bar{P}_{\\text{empirical}} = \\frac{\\text{实际总消费 (USD)}}{\\text{Total Tokens}} \\times 10^6 = \\frac{\\text{实际总消费 (百万美元)} \\times 10^{12}}{N_p + N_c} \\quad (\\$/\\text{M Tokens})$$\n\n")
         doc.append("**4. 综合节省率（Cost Reduction Rate）**：\n")
         doc.append("$$\\Delta_{\\text{saving}} = \\frac{\\bar{P}_{\\text{no\\_cache}} - \\bar{P}_{\\text{empirical}}}{\\bar{P}_{\\text{no\\_cache}}} \\times 100\\%$$\n\n")
+        doc.append("**5. 首选偏好应用流量份额（Top Apps Traffic Share）**：\n")
+        doc.append("OpenRouter 官方模型详情页中的 Top Apps 展示了各客户端自接入以来的全量累计消耗。为消除绝对累计量与 7 天统计周期之间的量纲差异，报告取前序主要应用的流量比重计算相对偏好份额：\n")
+        doc.append("$$\\text{Share}_i = \\frac{\\text{Tokens}_i}{\\sum_{k \\in \\text{Top Apps}} \\text{Tokens}_k} \\times 100\\%$$\n\n")
+        doc.append("**6. 优势细分场景（Dominant Task Scenario）**：\n")
+        doc.append("依据 OpenRouter 官方细分任务开销接口（`task-spend`）统计。在各模型详细指标中给出该模型市场份额最高的小类细分标签（若无公开细分数据则不展示）。\n\n")
 
         # Write file
         content = "".join(doc)
