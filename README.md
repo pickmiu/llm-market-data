@@ -42,16 +42,32 @@
 
 ```text
 data/openrouter/
-├── apps/               # AI 编程工具与应用消耗快照 (YYYY-MM-DD.json)
-├── benchmarks/         # 模型基准跑分评估快照 (YYYY-MM-DD.json)
-├── coding_apps/        # Coding Agents 52周历史时序与最新排行快照 (YYYY-MM-DD.json)
-├── models/             # 全量模型规格与定价快照 (YYYY-MM-DD.json)
-├── performance/        # 模型首字延迟与生成吞吐测速 (YYYY-MM-DD.json)
-├── rankings_daily/     # 历史每日 Token 排行榜分日明细 (YYYY-MM-DD.json)
-├── session_cost/       # 典型交互会话成本估算 (YYYY-MM-DD.json)
-├── task_spend/         # 各专业任务分类下的模型开销份额 (YYYY-MM-DD.json)
-└── transcription/      # 语音转录 (ASR) 模型调用排行快照 (YYYY-MM-DD.json)
+├── apps/               # [前端接口] AI 编程工具与应用消耗快照 (YYYY-MM-DD.json)
+├── benchmarks/         # [前端接口] 模型基准跑分评估快照 (YYYY-MM-DD.json)
+├── coding_apps/        # [前端接口] Coding Agents 52周历史时序与最新排行 (YYYY-MM-DD.json)
+├── models/             # [官方API]  全量模型规格与定价快照 (无需Key) (YYYY-MM-DD.json)
+├── performance/        # [前端接口] 模型首字延迟与生成吞吐测速 (YYYY-MM-DD.json)
+├── rankings_daily/     # [官方API]  历史每日 Token 排行榜分日明细 (需API Key) (YYYY-MM-DD.json)
+├── rankings_models/    # [前端接口] 官方模型周榜快照 (含实际结算金额 total_usage) (YYYY-MM-DD.json)
+├── session_cost/       # [前端接口] 典型交互会话成本估算 (YYYY-MM-DD.json)
+├── task_spend/         # [前端接口] 各专业任务分类下的模型开销份额 (YYYY-MM-DD.json)
+└── transcription/      # [前端爬取] 语音转录 (ASR) 模型调用排行快照 (SSR页面解析) (YYYY-MM-DD.json)
 ```
+
+#### 数据源分类明细对照
+
+| 目录名称 | 数据来源属性 | 具体来源端点 / 协议 | 鉴权要求 | 说明 |
+| :--- | :---: | :--- | :---: | :--- |
+| `models/` | **官方开放 API** | `GET https://openrouter.ai/api/v1/models` | 无需 Key | 官方公开元数据、上下文与刊例标称单价 |
+| `rankings_daily/` | **官方开放 API** | `GET https://openrouter.ai/api/v1/datasets/rankings-daily` | **需 API Key** | 官方历史分日 Token 排行数据集（物理吞吐量） |
+| `apps/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/apps` | 公开接口 | 热门应用与 Coding Agent 消耗排行 |
+| `benchmarks/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/benchmarks` | 公开接口 | Artificial Analysis 综合跑分与加权输入价 |
+| `coding_apps/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/category-chart` | 公开接口 | 编程 Agent 52 周历史消耗曲线与分类数据 |
+| `performance/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/performance` | 公开接口 | 各模型实测生成速度（tok/s）与首字延迟 |
+| `rankings_models/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/models` | 公开接口 | 周榜官方实际结算扣费（`total_usage`）与细分 Token |
+| `session_cost/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/session-cost` | 公开接口 | 不同交互轮次与上下文窗口下的会话成本估算 |
+| `task_spend/` | **前端接口** | `GET https://openrouter.ai/api/frontend/v1/rankings/task-spend` | 公开接口 | 代码生成、翻译、对话等任务维度的模型开销占比 |
+| `transcription/` | **前端爬取** | `https://openrouter.ai/rankings/transcription` | 页面解析 | 官方未开放 JSON 接口，自 Next.js SSR 页面提取 |
 
 ---
 
@@ -103,13 +119,16 @@ python cli.py sync --lookback-days 14 --max-requests 10
 ```
 
 #### 仅同步指定模块
-支持 `models`, `rankings`, `apps`, `task_spend`, `session_cost`, `benchmarks`, `performance`：
+支持 `models`, `rankings`, `apps`, `task_spend`, `session_cost`, `benchmarks`, `performance`, `transcription`, `coding_apps`, `rankings_models`：
 ```bash
 # 仅更新今天的模型价格元数据
 python cli.py sync --only models
 
 # 仅更新编程工具与应用榜单
 python cli.py sync --only apps
+
+# 仅更新包含实际结算金额的官方模型榜单
+python cli.py sync --only rankings_models
 ```
 
 #### 强制刷新已存在的文件

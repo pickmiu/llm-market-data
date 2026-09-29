@@ -52,6 +52,10 @@ class OpenRouterWebCrawler:
         """Fetches performance data (throughput tok/s, latency, best providers and prices)."""
         return self._fetch_json("performance")
 
+    def fetch_rankings_models(self) -> Dict[str, Any]:
+        """Fetches Top Models rankings (rolling 7-day usage, prompt/completion tokens, and request counts)."""
+        return self._fetch_json("models")
+
     def fetch_transcription(self) -> Dict[str, Any]:
         """Fetches Transcription (Speech-to-Text) leaderboard from openrouter.ai/rankings/transcription."""
         url = "https://openrouter.ai/rankings/transcription"

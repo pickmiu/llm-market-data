@@ -305,3 +305,42 @@ def test_fetch_coding_apps_error(mock_get):
     assert res["status"] == "error"
     assert "500" in res["error"]
 
+@patch("sources.openrouter.crawler.requests.get")
+def test_fetch_rankings_models_success(mock_get):
+    mock_resp = MagicMock(status_code=200)
+    mock_resp.json.return_value = {
+        "data": [
+            {
+                "model_permaslug": "openai/gpt-6-astra-20260903",
+                "total_usage": 2074780.5,
+                "total_prompt_tokens": 975971487042,
+                "total_completion_tokens": 8579040854,
+                "count": 7678519
+            }
+        ]
+    }
+    mock_get.return_value = mock_resp
+
+    crawler = OpenRouterWebCrawler()
+    res = crawler.fetch_rankings_models()
+
+    assert res["status"] == "ok"
+    assert len(res["data"]) == 1
+    assert res["data"][0]["model_permaslug"] == "openai/gpt-6-astra-20260903"
+    assert res["data"][0]["total_usage"] == 2074780.5
+    mock_get.assert_called_once_with(
+        "https://openrouter.ai/api/frontend/v1/rankings/models",
+        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
+        timeout=20
+    )
+
+@patch("sources.openrouter.crawler.requests.get")
+def test_fetch_rankings_models_error(mock_get):
+    mock_resp = MagicMock(status_code=502, text="Bad Gateway")
+    mock_get.return_value = mock_resp
+
+    crawler = OpenRouterWebCrawler()
+    res = crawler.fetch_rankings_models()
+    assert res["status"] == "error"
+    assert "502" in res["error"]
+

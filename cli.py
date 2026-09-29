@@ -44,9 +44,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sync_parser.add_argument(
         "--only",
-        choices=["models", "rankings", "apps", "task_spend", "session_cost", "benchmarks", "performance", "transcription", "coding_apps"],
+        choices=["models", "rankings", "apps", "task_spend", "session_cost", "benchmarks", "performance", "transcription", "coding_apps", "rankings_models"],
         default=None,
-        help="Sync only specified target (models, rankings, apps, task_spend, session_cost, benchmarks, performance, transcription, or coding_apps)"
+        help="Sync only specified target (models, rankings, apps, task_spend, session_cost, benchmarks, performance, transcription, coding_apps, or rankings_models)"
     )
 
     return parser
@@ -57,7 +57,7 @@ def main(args: list = None) -> int:
 
     if parsed.command == "sync":
         api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key and parsed.only not in ("models", "apps", "task_spend", "session_cost", "benchmarks", "performance", "transcription", "coding_apps"):
+        if not api_key and parsed.only not in ("models", "apps", "task_spend", "session_cost", "benchmarks", "performance", "transcription", "coding_apps", "rankings_models"):
             print("[Warning] OPENROUTER_API_KEY is not set. Rankings daily API calls will fail.")
 
         data_dir = Path(__file__).resolve().parent / "data" / "openrouter"
@@ -91,6 +91,8 @@ def main(args: list = None) -> int:
                 print(f"  - Transcription snapshot: {results['transcription']}")
             if "coding_apps" in results:
                 print(f"  - Coding apps history & leaderboard snapshot: {results['coding_apps']}")
+            if "rankings_models" in results:
+                print(f"  - Rankings models (rolling 7-day usage & spend) snapshot: {results['rankings_models']}")
             if "rankings_daily" in results:
                 stats = results["rankings_daily"]
                 print(f"  - Daily rankings: fetched {stats['fetched_days']} days, remaining missing {stats['remaining_days']} days")

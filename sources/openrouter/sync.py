@@ -185,6 +185,15 @@ def sync_coding_apps(
     """Fetches and persists OpenRouter Coding Agents 52-week historical time series and leaderboard snapshot."""
     return _sync_frontend_snapshot(data_dir, "coding_apps", crawler.fetch_coding_apps, target_date, force, default_data={})
 
+def sync_rankings_models(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    target_date: str,
+    force: bool = False
+) -> Optional[Path]:
+    """Fetches and persists OpenRouter frontend Top Models (rolling 7-day usage, tokens & spend) leaderboard snapshot."""
+    return _sync_frontend_snapshot(data_dir, "rankings_models", crawler.fetch_rankings_models, target_date, force, default_data=[])
+
 def sync_rankings_daily(
     client: OpenRouterClient,
     data_dir: Path,
@@ -318,7 +327,13 @@ def run_sync(
         if coding_apps_file:
             results["coding_apps"] = str(coding_apps_file)
 
-    # 9. Sync rankings daily (API)
+    # 9. Sync rankings models (Frontend API)
+    if only in (None, "rankings_models"):
+        rankings_models_file = sync_rankings_models(crawler, data_dir, today_str, force=force)
+        if rankings_models_file:
+            results["rankings_models"] = str(rankings_models_file)
+
+    # 10. Sync rankings daily (API)
     if only in (None, "rankings"):
         if end_date:
             e_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()

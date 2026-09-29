@@ -12,6 +12,7 @@ from sources.openrouter.sync import (
     sync_performance,
     sync_transcription,
     sync_coding_apps,
+    sync_rankings_models,
     sync_rankings_daily,
     run_sync
 )
@@ -244,6 +245,38 @@ def test_run_sync_transcription_and_coding_apps(tmp_path):
         res_coding = run_sync(data_dir=tmp_path, only="coding_apps")
         assert "coding_apps" in res_coding
         assert (tmp_path / "coding_apps").is_dir()
+
+def test_sync_rankings_models_saves_file(tmp_path):
+    crawler = MagicMock()
+    crawler.fetch_rankings_models.return_value = {
+        "status": "ok",
+        "data": [
+            {
+                "model_permaslug": "openai/gpt-6-astra-20260903",
+                "total_usage": 2074780.5,
+                "total_prompt_tokens": 975971487042,
+                "total_completion_tokens": 8579040854,
+                "count": 7678519
+            }
+        ]
+    }
+    out_file = sync_rankings_models(crawler, tmp_path, target_date="2026-09-28")
+    assert out_file.exists()
+    content = json.loads(out_file.read_text())
+    assert content["date"] == "2026-09-28"
+    assert content["data"][0]["model_permaslug"] == "openai/gpt-6-astra-20260903"
+    assert content["data"][0]["total_usage"] == 2074780.5
+
+def test_run_sync_rankings_models(tmp_path):
+    from unittest.mock import patch
+    with patch("sources.openrouter.sync.OpenRouterClient"), \
+         patch("sources.openrouter.sync.OpenRouterWebCrawler") as mock_crawler_cls:
+        crawler = mock_crawler_cls.return_value
+        crawler.fetch_rankings_models.return_value = {"status": "ok", "data": [{"model_permaslug": "test-model"}]}
+
+        res = run_sync(data_dir=tmp_path, only="rankings_models")
+        assert "rankings_models" in res
+        assert (tmp_path / "rankings_models").is_dir()
 
 
 

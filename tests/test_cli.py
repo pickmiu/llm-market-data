@@ -39,6 +39,7 @@ def test_cli_main_executes_sync(mock_run_sync):
         "performance": "data/openrouter/performance/2026-09-28.json",
         "transcription": "data/openrouter/transcription/2026-09-28.json",
         "coding_apps": "data/openrouter/coding_apps/2026-09-28.json",
+        "rankings_models": "data/openrouter/rankings_models/2026-09-28.json",
         "rankings_daily": {"fetched_days": 2, "remaining_days": 0, "failed": []}
     }
     exit_code = main(["sync", "--lookback-days", "7"])

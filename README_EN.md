@@ -42,16 +42,32 @@ Collected datasets are structured in JSON format under `data/openrouter/`:
 
 ```text
 data/openrouter/
-├── apps/               # AI coding tools and apps leaderboard (YYYY-MM-DD.json)
-├── benchmarks/         # Benchmark evaluation scores (YYYY-MM-DD.json)
-├── coding_apps/        # Coding agents 52-week token history & rankings (YYYY-MM-DD.json)
-├── models/             # Full model specifications and pricing (YYYY-MM-DD.json)
-├── performance/        # Latency and throughput benchmarks (YYYY-MM-DD.json)
-├── rankings_daily/     # Daily token rankings by date (YYYY-MM-DD.json)
-├── session_cost/       # Estimated cost per session (YYYY-MM-DD.json)
-├── task_spend/         # Model spending shares by task category (YYYY-MM-DD.json)
-└── transcription/      # Transcription (Speech-to-Text) rankings (YYYY-MM-DD.json)
+├── apps/               # [Frontend API] AI coding tools and apps leaderboard (YYYY-MM-DD.json)
+├── benchmarks/         # [Frontend API] Benchmark evaluation scores (YYYY-MM-DD.json)
+├── coding_apps/        # [Frontend API] Coding agents 52-week token history & rankings (YYYY-MM-DD.json)
+├── models/             # [Official API] Full model specifications and pricing (No key required) (YYYY-MM-DD.json)
+├── performance/        # [Frontend API] Latency and throughput benchmarks (YYYY-MM-DD.json)
+├── rankings_daily/     # [Official API] Daily token rankings by date (Requires API Key) (YYYY-MM-DD.json)
+├── rankings_models/    # [Frontend API] Official weekly models rankings (includes total_usage spend) (YYYY-MM-DD.json)
+├── session_cost/       # [Frontend API] Estimated cost per session (YYYY-MM-DD.json)
+├── task_spend/         # [Frontend API] Model spending shares by task category (YYYY-MM-DD.json)
+└── transcription/      # [Frontend Crawl] Transcription (Speech-to-Text) rankings (SSR extraction) (YYYY-MM-DD.json)
 ```
+
+#### Dataset Source Classification
+
+| Directory | Source Type | Endpoint / Protocol | Auth Requirement | Description |
+| :--- | :---: | :--- | :---: | :--- |
+| `models/` | **Official API** | `GET https://openrouter.ai/api/v1/models` | None | Model metadata, context lengths, and list catalog pricing |
+| `rankings_daily/` | **Official API** | `GET https://openrouter.ai/api/v1/datasets/rankings-daily` | **API Key Required** | Historical daily physical token volume rankings |
+| `apps/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/apps` | Public | Trending apps and coding agents token consumption |
+| `benchmarks/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/benchmarks` | Public | Artificial Analysis intelligence/coding benchmarks & weighted input prices |
+| `coding_apps/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/category-chart` | Public | Coding agents 52-week historical trend charts & subcategories |
+| `performance/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/performance` | Public | Real-time generation throughput (tok/s) and time-to-first-token (TTFT) |
+| `rankings_models/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/models` | Public | Weekly leaderboard with actual billed spend (`total_usage`) & I/O breakdown |
+| `session_cost/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/session-cost` | Public | Cost per typical interaction session across harnesses |
+| `task_spend/` | **Frontend API** | `GET https://openrouter.ai/api/frontend/v1/rankings/task-spend` | Public | Dollar spend distribution across coding, translation, chat tasks |
+| `transcription/` | **Frontend Crawl** | `https://openrouter.ai/rankings/transcription` | Web Crawl | ASR leaderboard extracted from Next.js SSR page flight data & HTML |
 
 ---
 
@@ -103,13 +119,16 @@ python cli.py sync --lookback-days 14 --max-requests 10
 ```
 
 #### Sync Specific Module
-Options: `models`, `rankings`, `apps`, `task_spend`, `session_cost`, `benchmarks`, `performance`:
+Options: `models`, `rankings`, `apps`, `task_spend`, `session_cost`, `benchmarks`, `performance`, `transcription`, `coding_apps`, `rankings_models`:
 ```bash
 # Update model pricing only
 python cli.py sync --only models
 
 # Update coding apps leaderboard only
 python cli.py sync --only apps
+
+# Update official weekly models rankings with actual usage spend
+python cli.py sync --only rankings_models
 ```
 
 #### Force Overwrite Existing Snapshots
