@@ -70,25 +70,31 @@ class OpenRouterWebCrawler:
             idx = raw.find("model_permaslug")
             if idx != -1:
                 start_arr = raw.rfind("[", 0, idx)
-                bracket_count = 0
-                end_arr = -1
-                for i in range(start_arr, len(raw)):
-                    if raw[i] == "[":
-                        bracket_count += 1
-                    elif raw[i] == "]":
-                        bracket_count -= 1
-                        if bracket_count == 0:
-                            end_arr = i + 1
-                            break
-                if end_arr != -1:
-                    arr_str = raw[start_arr:end_arr]
-                    unescaped = arr_str.replace(r'\"', '"').replace(r'\\', '\\')
-                    try:
-                        models_data = json.loads(unescaped)
-                        models_data = sorted(models_data, key=lambda x: x.get("count", 0), reverse=True)
-                        return {"status": "ok", "data": {"models": models_data}, "error": None}
-                    except Exception as parse_err:
-                        logging.warning("Failed to parse Next.js flight data for transcription: %s", parse_err)
+                if start_arr != -1:
+                    bracket_count = 0
+                    end_arr = -1
+                    for i in range(start_arr, len(raw)):
+                        if raw[i] == "[":
+                            bracket_count += 1
+                        elif raw[i] == "]":
+                            bracket_count -= 1
+                            if bracket_count == 0:
+                                end_arr = i + 1
+                                break
+                    if end_arr != -1:
+                        arr_str = raw[start_arr:end_arr]
+                        unescaped = arr_str.replace(r'\"', '"').replace(r'\\', '\\')
+                        try:
+                            models_data = json.loads(unescaped)
+                            if isinstance(models_data, list):
+                                models_data = sorted(
+                                    models_data,
+                                    key=lambda x: x.get("count", 0) if isinstance(x, dict) else 0,
+                                    reverse=True
+                                )
+                                return {"status": "ok", "data": {"models": models_data}, "error": None}
+                        except Exception as parse_err:
+                            logging.warning("Failed to parse Next.js flight data for transcription: %s", parse_err)
 
             # 2. Fallback: Parse HTML table rows
             rows = re.findall(r'<tr[^>]*>(.*?)</tr>', raw, re.DOTALL)

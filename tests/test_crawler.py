@@ -227,6 +227,26 @@ def test_fetch_transcription_fallback_table(mock_get):
     assert models[0]["author"] == "openai"
 
 @patch("sources.openrouter.crawler.requests.get")
+def test_fetch_transcription_malformed_ssr_falls_back_to_table(mock_get):
+    html = '''
+    <html>
+      model_permaslug
+      <table>
+        <tr><th>Rank</th><th>Model</th><th>Author</th><th>Requests</th><th>Change</th></tr>
+        <tr><td>1</td><td>Whisper Large V3</td><td>openai</td><td>8.38M requests</td><td>+5%</td></tr>
+      </table>
+    </html>
+    '''
+    mock_resp = MagicMock(status_code=200, text=html)
+    mock_get.return_value = mock_resp
+
+    crawler = OpenRouterWebCrawler()
+    res = crawler.fetch_transcription()
+
+    assert res["status"] == "ok"
+    assert res["data"]["models"][0]["name"] == "Whisper Large V3"
+
+@patch("sources.openrouter.crawler.requests.get")
 def test_fetch_transcription_error(mock_get):
     mock_resp = MagicMock(status_code=500, text="Internal Error")
     mock_get.return_value = mock_resp
