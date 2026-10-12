@@ -845,6 +845,11 @@ class ModelReportGenerator:
         doc.append(f"- **数据源与接口**：来自 OpenRouter 官方细分任务支出接口（`GET /api/frontend/v1/rankings/task-spend`）。\n")
         doc.append(f"- **统计时间窗口**：根据官方接口返回的 `windowDays: {spend_win_days}` 字段，统计基于**过去 {spend_win_days} 天滚动窗口（Rolling {spend_win_days}-Day Window）**的全平台美元消费支出（Spend Share），而非 Token 数量。\n")
         doc.append(f"- **指标作用与互补性**：核心榜单聚焦 7 天滚动用量以捕捉实时流量爆发；任务场景分布采用 30 天统计窗口以平滑短期偶然波动，揭示各模型在垂直领域生产环境与智能体流程中的中长期商业渗透与核心优势壁垒。各模型详细指标中的“优势细分场景”为该模型在过去 {spend_win_days} 天内取得市场份额第一（Top 1）的细分任务标签（若无公开细分数据则不展示）。\n\n")
+        doc.append("**7. 实际有效单价成因与服务商竞价解耦说明（Provider Marketplace & Cache Disambiguation）**：\n")
+        doc.append("- **双驱动成因**：报告中呈现的“实际有效单价”（$\\bar{P}_{\\text{empirical}}$）显著低于“标称综合单价”（$\\bar{P}_{\\text{no\\_cache}}$），是**多服务商竞价路由折扣（Provider Marketplace Pricing）**与**上下文缓存机制（Prompt Caching）**双重驱动的综合结果。\n")
+        doc.append("- **服务商竞价机制**：OpenRouter 属于多服务商聚合平台，以 DeepSeek V4.1 Flash 为例，平台接入了 32 家第三方算力提供商。各服务商实际挂牌的非缓存输入单价普遍大幅低于官方标称价（如部分服务商基础输入价低至 $0.033~$0.05/M，相较标称价折扣达 80%~90%）。平台智能路由会将大量请求分发至具备成本优势的服务商。\n")
+        doc.append("- **缓存读取机制**：支持上下文缓存的服务商对命中的 Prompt 前缀进一步给予低至 $0.003~$0.006/M 的缓存读取单价。\n")
+        doc.append("- **指标对比本质**：“标称综合单价”仅反映按照官方单一目录标准、在假定 0% 缓存时的**理论基准成本上限**；“实际有效单价”则反映平台用户在实际多服务商路由与缓存交互下的**真实加权成交均价**。“综合节省率”代表实际支出相对该理论上限的整体优化幅度，不应被单一等同于物理缓存命中率。\n\n")
 
         # Write file
         content = "".join(doc)
