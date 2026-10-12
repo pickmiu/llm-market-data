@@ -40,13 +40,34 @@ class ModelReportGenerator:
         self.task_spend: Dict[str, Any] = {}
         self._load_local_datasets()
 
-    def _load_local_datasets(self) -> None:
-        """Loads models metadata, benchmarks, and task spend snapshots."""
+    def _find_snapshot_file(self, subdir: str, target_date: Optional[str] = None) -> Optional[Path]:
+        """Finds the most appropriate snapshot JSON file in a given directory."""
+        sdir = self.data_dir / subdir
+        if not sdir.exists():
+            return None
+        files = sorted([
+            f for f in sdir.glob("*.json")
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", f.stem)
+        ], key=lambda x: x.stem)
+        if not files:
+            return None
+        if target_date:
+            candidates = [f for f in files if f.stem <= target_date]
+            if candidates:
+                return candidates[-1]
+        return files[-1]
+
+    def _load_local_datasets(self, target_date: Optional[str] = None) -> None:
+        """Loads models metadata, benchmarks, and task spend snapshots dynamically."""
+        self.models_meta = []
+        self.meta_by_canon = {}
+        self.meta_by_id = {}
+        self.benchmarks = {}
+        self.task_spend = {}
+
         # 1. Models metadata
-        models_file = self.data_dir / "models" / "2026-09-29.json"
-        if not models_file.exists():
-            models_file = self.data_dir / "models" / "2026-09-28.json"
-        if models_file.exists():
+        models_file = self._find_snapshot_file("models", target_date)
+        if models_file and models_file.exists():
             with models_file.open("r", encoding="utf-8") as f:
                 self.models_meta = json.load(f).get("data", [])
 
@@ -61,18 +82,14 @@ class ModelReportGenerator:
                     self.meta_by_canon[cslug] = m
 
         # 2. Benchmarks (weighted input prices & costPerRequest)
-        bench_file = self.data_dir / "benchmarks" / "2026-09-29.json"
-        if not bench_file.exists():
-            bench_file = self.data_dir / "benchmarks" / "2026-09-28.json"
-        if bench_file.exists():
+        bench_file = self._find_snapshot_file("benchmarks", target_date)
+        if bench_file and bench_file.exists():
             with bench_file.open("r", encoding="utf-8") as f:
                 self.benchmarks = json.load(f).get("data", {})
 
         # 3. Task spend (macro category & tasks distribution)
-        ts_file = self.data_dir / "task_spend" / "2026-09-29.json"
-        if not ts_file.exists():
-            ts_file = self.data_dir / "task_spend" / "2026-09-28.json"
-        if ts_file.exists():
+        ts_file = self._find_snapshot_file("task_spend", target_date)
+        if ts_file and ts_file.exists():
             with ts_file.open("r", encoding="utf-8") as f:
                 self.task_spend = json.load(f).get("data", {})
 
@@ -94,20 +111,45 @@ class ModelReportGenerator:
     def fetch_official_7day_models(self, target_date: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Fetches the official OpenRouter rolling 7-day model rankings endpoint.
-        Prefers local cached snapshot in data/openrouter/rankings_models/{target_date}.json if present.
+        Prefers local cached snapshot in data/openrouter/rankings_models.
+        Note: The 7-day rolling window ending on target_date is recorded in the snapshot
+        crawled on (target_date + 1 day) or in a snapshot containing target_date records.
         """
         if target_date:
-            local_snap = self.data_dir / "rankings_models" / f"{target_date}.json"
-            if local_snap.exists():
-                try:
-                    with local_snap.open("r", encoding="utf-8") as f:
-                        d = json.load(f)
-                        data = d.get("data", [])
-                        if data:
-                            logging.info("Loaded official rankings/models from local snapshot: %s", local_snap)
-                            return data
-                except Exception as e:
-                    logging.warning("Failed to read local snapshot %s: %s", local_snap, e)
+            candidates = []
+            try:
+                target_dt = datetime.datetime.strptime(target_date, "%Y-%m-%d").date()
+                next_day_str = (target_dt + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+                candidates.append(self.data_dir / "rankings_models" / f"{next_day_str}.json")
+            except Exception:
+                pass
+            candidates.append(self.data_dir / "rankings_models" / f"{target_date}.json")
+
+            for local_snap in candidates:
+                if local_snap.exists():
+                    try:
+                        with local_snap.open("r", encoding="utf-8") as f:
+                            d = json.load(f)
+                            data = d.get("data", [])
+                            # Check whether this snapshot contains target_date records
+                            if any(r.get("date") == f"{target_date} 00:00:00" for r in data):
+                                logging.info("Loaded official rankings/models from local snapshot: %s", local_snap)
+                                return data
+                    except Exception as e:
+                        logging.warning("Failed to read local snapshot %s: %s", local_snap, e)
+
+            # Fallback to candidate file existence if date matching didn't trigger
+            for local_snap in candidates:
+                if local_snap.exists():
+                    try:
+                        with local_snap.open("r", encoding="utf-8") as f:
+                            d = json.load(f)
+                            data = d.get("data", [])
+                            if data:
+                                logging.info("Loaded official rankings/models from local snapshot: %s", local_snap)
+                                return data
+                    except Exception as e:
+                        logging.warning("Failed to read local snapshot %s: %s", local_snap, e)
 
         url = "https://openrouter.ai/api/frontend/v1/rankings/models"
         try:
@@ -456,6 +498,9 @@ class ModelReportGenerator:
         Properly accumulates across variants for each model_permaslug.
         Returns (top5_by_tokens, top5_by_spend).
         """
+        start_date = rolling_dates[0]
+        end_date = rolling_dates[-1]
+
         daily_tokens = {}
         for dt in rolling_dates:
             fpath = self.data_dir / "rankings_daily" / f"{dt}.json"
@@ -471,6 +516,10 @@ class ModelReportGenerator:
         for row in official_items:
             s = row.get("model_permaslug")
             if not s:
+                continue
+            # Filter out stale historical rows if row has a date field older than start_date
+            row_date = row.get("date", "")
+            if row_date and row_date < f"{start_date} 00:00:00":
                 continue
             if s not in off_by_slug:
                 off_by_slug[s] = {
@@ -502,7 +551,17 @@ class ModelReportGenerator:
             official_tot = p_tok + c_tok
             cached_native = int(off_row.get("total_native_tokens_cached", 0))
             daily_tot = daily_tokens.get(slug, 0)
-            tot_tokens = max(official_tot, daily_tot)
+
+            # Consistently derive total tokens:
+            # If official rolling tokens are present, use official_tot (guaranteeing p_tok + c_tok == tot_tokens).
+            # Otherwise, fall back to daily_tot.
+            if official_tot > 0:
+                tot_tokens = official_tot
+            else:
+                tot_tokens = daily_tot
+                p_tok = int(tot_tokens * 0.90)
+                c_tok = tot_tokens - p_tok
+
             spend_usd = float(off_row.get("total_usage", 0.0))
             req_count = int(off_row.get("count", 0))
 
@@ -593,12 +652,25 @@ class ModelReportGenerator:
 
         return top5_tokens, top5_spend
 
-    def generate_report(self) -> Path:
+    def generate_report(self, target_end_date: Optional[str] = None) -> Path:
         """Executes analysis and generates Markdown document: key data first, methodology last."""
-        rolling_dates = self.get_latest_7_days()
+        if target_end_date:
+            end_date = target_end_date
+            latest_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d").date()
+            rolling_dates = [(latest_dt - datetime.timedelta(days=i)).strftime("%Y-%m-%d") for i in range(6, -1, -1)]
+        else:
+            rolling_dates = self.get_latest_7_days()
+            end_date = rolling_dates[-1]
+
         start_date = rolling_dates[0]
-        end_date = rolling_dates[-1]
         logging.info("Analyzing rolling 7-day window: %s to %s", start_date, end_date)
+
+        # Reload metadata dynamically aligned with end_date / report generation date
+        try:
+            report_snap_dt = (datetime.datetime.strptime(end_date, "%Y-%m-%d").date() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        except Exception:
+            report_snap_dt = end_date
+        self._load_local_datasets(target_date=report_snap_dt)
 
         logging.info("Fetching official 7-day model metrics...")
         official_items = self.fetch_official_7day_models(target_date=end_date)
@@ -787,10 +859,11 @@ class ModelReportGenerator:
 def main():
     parser = argparse.ArgumentParser(description="Generate weekly top 5 LLM models report")
     parser.add_argument("--project-root", type=str, default=None, help="Root path of the project")
+    parser.add_argument("--end-date", type=str, default=None, help="End date of 7-day rolling window (YYYY-MM-DD)")
     args = parser.parse_args()
 
     generator = ModelReportGenerator(project_root=Path(args.project_root) if args.project_root else None)
-    out_file = generator.generate_report()
+    out_file = generator.generate_report(target_end_date=args.end_date)
     print(f"[+] Successfully generated report: {out_file}")
 
 
