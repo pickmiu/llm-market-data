@@ -194,6 +194,22 @@ def sync_rankings_models(
     """Fetches and persists OpenRouter frontend Top Models (rolling 7-day usage, tokens & spend) leaderboard snapshot."""
     return _sync_frontend_snapshot(data_dir, "rankings_models", crawler.fetch_rankings_models, target_date, force, default_data=[])
 
+def sync_rankings_models_spend(
+    crawler: OpenRouterWebCrawler,
+    data_dir: Path,
+    target_date: str,
+    force: bool = False
+) -> Optional[Path]:
+    """Fetches and persists OpenRouter frontend Top Models by Spend leaderboard snapshot."""
+    return _sync_frontend_snapshot(
+        data_dir,
+        "rankings_models_spend",
+        lambda: crawler.fetch_rankings_models(metric="spend"),
+        target_date,
+        force,
+        default_data=[]
+    )
+
 def sync_rankings_daily(
     client: OpenRouterClient,
     data_dir: Path,
@@ -332,6 +348,9 @@ def run_sync(
         rankings_models_file = sync_rankings_models(crawler, data_dir, today_str, force=force)
         if rankings_models_file:
             results["rankings_models"] = str(rankings_models_file)
+        rankings_models_spend_file = sync_rankings_models_spend(crawler, data_dir, today_str, force=force)
+        if rankings_models_spend_file:
+            results["rankings_models_spend"] = str(rankings_models_spend_file)
 
     # 10. Sync rankings daily (API)
     if only in (None, "rankings"):

@@ -17,6 +17,7 @@ import argparse
 import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
+from collections import defaultdict
 import requests
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
@@ -178,6 +179,74 @@ class ModelReportGenerator:
                 logging.warning("Official rankings/models HTTP %s", resp.status_code)
         except Exception as e:
             logging.warning("Failed to fetch official rankings/models: %s", e)
+        return []
+
+    def fetch_official_7day_models_spend(self, target_date: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Fetches the official OpenRouter rolling 7-day model spend rankings endpoint (metric=spend).
+        Prefers local cached snapshot in data/openrouter/rankings_models_spend.
+        """
+        if target_date:
+            candidates = []
+            try:
+                target_dt = datetime.datetime.strptime(target_date, "%Y-%m-%d").date()
+                next_day_str = (target_dt + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+                candidates.append(self.data_dir / "rankings_models_spend" / f"{next_day_str}.json")
+            except Exception:
+                pass
+            candidates.append(self.data_dir / "rankings_models_spend" / f"{target_date}.json")
+
+            for local_snap in candidates:
+                if local_snap.exists():
+                    try:
+                        with local_snap.open("r", encoding="utf-8") as f:
+                            d = json.load(f)
+                            data = d.get("data", [])
+                            if any(r.get("date") == f"{target_date} 00:00:00" for r in data):
+                                logging.info("Loaded official rankings/models?metric=spend from local snapshot: %s", local_snap)
+                                return data
+                    except Exception as e:
+                        logging.warning("Failed to read local snapshot %s: %s", local_snap, e)
+
+            for local_snap in candidates:
+                if local_snap.exists():
+                    try:
+                        with local_snap.open("r", encoding="utf-8") as f:
+                            d = json.load(f)
+                            data = d.get("data", [])
+                            if data:
+                                logging.info("Loaded official rankings/models?metric=spend from local snapshot: %s", local_snap)
+                                return data
+                    except Exception as e:
+                        logging.warning("Failed to read local snapshot %s: %s", local_snap, e)
+
+        url = "https://openrouter.ai/api/frontend/v1/rankings/models?metric=spend"
+        try:
+            resp = self.session.get(url, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json().get("data", [])
+                if target_date and data:
+                    out_dir = self.data_dir / "rankings_models_spend"
+                    out_dir.mkdir(parents=True, exist_ok=True)
+                    out_file = out_dir / f"{target_date}.json"
+                    snapshot = {
+                        "date": target_date,
+                        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        "status": "ok",
+                        "error": None,
+                        "data": data
+                    }
+                    try:
+                        with out_file.open("w", encoding="utf-8") as f:
+                            json.dump(snapshot, f, indent=2, ensure_ascii=False)
+                        logging.info("Cached rankings_models_spend snapshot to %s", out_file)
+                    except Exception as w_err:
+                        logging.warning("Failed to save local rankings_models_spend snapshot: %s", w_err)
+                return data
+            else:
+                logging.warning("Official rankings/models?metric=spend HTTP %s", resp.status_code)
+        except Exception as e:
+            logging.warning("Failed to fetch official rankings/models?metric=spend: %s", e)
         return []
 
     @staticmethod
@@ -492,14 +561,22 @@ class ModelReportGenerator:
         return doc
 
 
-    def compute_model_metrics(self, official_items: List[Dict[str, Any]], rolling_dates: List[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def compute_model_metrics(
+        self,
+        official_items: List[Dict[str, Any]],
+        rolling_dates: List[str],
+        spend_items: Optional[List[Dict[str, Any]]] = None
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """
-        Computes detailed token, spend, pricing, and cache metrics for all models.
+        Computes detailed token, spend, pricing, and cache metrics for all models using Path 1.
         Properly accumulates across variants for each model_permaslug.
         Returns (top5_by_tokens, top5_by_spend).
         """
         start_date = rolling_dates[0]
         end_date = rolling_dates[-1]
+
+        if spend_items is None:
+            spend_items = self.fetch_official_7day_models_spend(target_date=end_date)
 
         daily_tokens = {}
         for dt in rolling_dates:
@@ -535,7 +612,19 @@ class ModelReportGenerator:
             off_by_slug[s]["total_usage"] += float(row.get("total_usage") or 0.0)
             off_by_slug[s]["count"] += int(row.get("count") or 0)
 
-        all_slugs = set(daily_tokens.keys()).union(off_by_slug.keys())
+        spend_share_by_slug: Dict[str, float] = {}
+        if spend_items:
+            for row in spend_items:
+                s = row.get("model_permaslug")
+                if not s:
+                    continue
+                row_date = row.get("date", "")
+                if row_date and row_date < f"{start_date} 00:00:00":
+                    continue
+                val = float(row.get("rankingMetricValue") or 0.0)
+                spend_share_by_slug[s] = spend_share_by_slug.get(s, 0.0) + val
+
+        all_slugs = set(daily_tokens.keys()).union(off_by_slug.keys()).union(spend_share_by_slug.keys())
         all_models_stats = []
 
         wip_dict = self.benchmarks.get("weightedInputPrices", {})
@@ -553,8 +642,6 @@ class ModelReportGenerator:
             daily_tot = daily_tokens.get(slug, 0)
 
             # Consistently derive total tokens:
-            # If official rolling tokens are present, use official_tot (guaranteeing p_tok + c_tok == tot_tokens).
-            # Otherwise, fall back to daily_tot.
             if official_tot > 0:
                 tot_tokens = official_tot
             else:
@@ -578,46 +665,12 @@ class ModelReportGenerator:
 
             io_ratio = (p_tok / c_tok) if c_tok > 0 else 0.0
 
-            if p_tok + c_tok > 0:
-                nominal_p_per_m = ((p_tok * prompt_p + c_tok * comp_p) / (p_tok + c_tok)) * 1e6
-            else:
-                nominal_p_per_m = (0.8 * prompt_p + 0.2 * comp_p) * 1e6
-
-            wip_val = wip_dict.get(slug)
-            if wip_val is None:
-                clean_slug = slug.split(":")[0]
-                wip_val = wip_dict.get(clean_slug)
-
             prompt_p_per_m = prompt_p * 1e6
             cache_read_p_per_m = cache_read_p * 1e6
             comp_p_per_m = comp_p * 1e6
 
-            if wip_val is not None and prompt_p_per_m > cache_read_p_per_m:
-                h_implied = max(0.0, min(1.0, (prompt_p_per_m - float(wip_val)) / (prompt_p_per_m - cache_read_p_per_m)))
-            elif cached_native > 0 and p_tok > 0:
-                h_implied = min(1.0, cached_native / p_tok)
-            else:
-                h_implied = 0.0
-
-            if wip_val is not None and p_tok + c_tok > 0:
-                eff_cache_p_per_m = ((p_tok * (float(wip_val) / 1e6) + c_tok * comp_p) / (p_tok + c_tok)) * 1e6
-            elif p_tok + c_tok > 0:
-                eff_cache_p_per_m = (
-                    ((1 - h_implied) * p_tok * prompt_p + h_implied * p_tok * cache_read_p + c_tok * comp_p)
-                    / (p_tok + c_tok)
-                ) * 1e6
-            else:
-                eff_cache_p_per_m = nominal_p_per_m
-
-            if tot_tokens > 0 and spend_usd > 0:
-                empirical_eff_p_per_m = (spend_usd / tot_tokens) * 1e6
-            else:
-                empirical_eff_p_per_m = eff_cache_p_per_m
-
-            if nominal_p_per_m > 0:
-                savings_pct = max(0.0, (1.0 - (empirical_eff_p_per_m / nominal_p_per_m))) * 100
-            else:
-                savings_pct = 0.0
+            # Platform spend share percentage
+            spend_share_pct = spend_share_by_slug.get(slug, 0.0) * 100.0
 
             cost_per_req = cpr_dict.get(slug) or cpr_dict.get(slug.split(":")[0])
 
@@ -630,27 +683,127 @@ class ModelReportGenerator:
                 "completion_tokens": c_tok,
                 "cached_tokens": cached_native,
                 "spend_usd": spend_usd,
+                "spend_share_pct": spend_share_pct,
                 "request_count": req_count,
                 "io_ratio": io_ratio,
                 "prompt_p_per_m": prompt_p_per_m,
                 "comp_p_per_m": comp_p_per_m,
                 "cache_read_p_per_m": cache_read_p_per_m,
                 "cache_write_p_per_m": cache_write_p * 1e6,
-                "wip_per_m": float(wip_val) if wip_val is not None else None,
-                "h_implied": h_implied,
-                "nominal_p_per_m": nominal_p_per_m,
-                "eff_cache_p_per_m": eff_cache_p_per_m,
-                "empirical_eff_p_per_m": empirical_eff_p_per_m,
-                "savings_pct": savings_pct,
                 "cost_per_req": float(cost_per_req) if cost_per_req is not None else None,
                 "description": meta.get("description", "")
             }
             all_models_stats.append(model_obj)
 
+        # Filter valid LLMs for ranking (exclude non-text models like pure audio/video)
+        valid_llms = [
+            m for m in all_models_stats
+            if m["total_tokens"] > 0
+            and not any(k in m["slug"].lower() for k in ["kling-video", "whisper", "embedding", "transcribe"])
+        ]
+
         top5_tokens = sorted(all_models_stats, key=lambda x: x["total_tokens"], reverse=True)[:5]
-        top5_spend = sorted(all_models_stats, key=lambda x: x["spend_usd"], reverse=True)[:5]
+
+        has_spend_share = any(m["spend_share_pct"] > 0 for m in valid_llms)
+        has_historical_spend = any(m["spend_usd"] > 0 for m in valid_llms)
+
+        if has_spend_share:
+            top5_spend = sorted(valid_llms, key=lambda x: x["spend_share_pct"], reverse=True)[:5]
+        elif has_historical_spend:
+            top5_spend = sorted(valid_llms, key=lambda x: x["spend_usd"], reverse=True)[:5]
+        else:
+            top5_spend = sorted(valid_llms, key=lambda x: x["total_tokens"], reverse=True)[:5]
 
         return top5_tokens, top5_spend
+
+    def compute_vendor_metrics(
+        self,
+        spend_items: List[Dict[str, Any]],
+        official_items: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Aggregates rolling 7-day spend shares and token consumption by model vendor/creator."""
+        tokens_by_slug = defaultdict(int)
+        for row in official_items:
+            slug = row.get("model_permaslug", "")
+            p = int(row.get("total_prompt_tokens", 0))
+            c = int(row.get("total_completion_tokens", 0))
+            tokens_by_slug[slug] += (p + c)
+
+        def normalize_vendor(prefix: str) -> str:
+            p = prefix.lower()
+            if p in ("meta-llama", "meta"):
+                return "Meta"
+            elif p in ("anthropic",):
+                return "Anthropic"
+            elif p in ("openai",):
+                return "OpenAI"
+            elif p in ("google",):
+                return "Google"
+            elif p in ("deepseek",):
+                return "DeepSeek (深度求索)"
+            elif p in ("z-ai",):
+                return "智谱 AI (Z.ai)"
+            elif p in ("moonshotai",):
+                return "月之暗面 (Moonshot AI)"
+            elif p in ("x-ai",):
+                return "xAI"
+            elif p in ("qwen",):
+                return "阿里通义 (Qwen)"
+            elif p in ("stepfun",):
+                return "阶跃星辰 (StepFun)"
+            elif p in ("xiaomi",):
+                return "小米 (Xiaomi)"
+            elif p in ("tencent",):
+                return "腾讯混元 (Tencent)"
+            elif p in ("minimax",):
+                return "MiniMax"
+            elif p in ("mistralai",):
+                return "Mistral AI"
+            return prefix.title()
+
+        # First aggregate spend share across variants (standard, batch, etc.)
+        spend_share_by_slug = defaultdict(float)
+        for row in spend_items:
+            slug = row.get("model_permaslug", "")
+            val = float(row.get("rankingMetricValue") or 0.0)
+            if slug:
+                spend_share_by_slug[slug] += val
+
+        vendor_spend = defaultdict(float)
+        vendor_tokens = defaultdict(int)
+        vendor_models = defaultdict(list)
+
+        all_slugs = set(tokens_by_slug.keys()).union(spend_share_by_slug.keys())
+        for slug in all_slugs:
+            prefix = slug.split("/")[0] if "/" in slug else "other"
+            vname = normalize_vendor(prefix)
+            share_val = spend_share_by_slug.get(slug, 0.0)
+            t_tok = tokens_by_slug.get(slug, 0)
+
+            vendor_spend[vname] += share_val
+            vendor_tokens[vname] += t_tok
+
+            meta = self.get_model_metadata(slug)
+            raw_name = meta.get("name") if meta else slug.split("/")[-1]
+            mname = re.sub(r"^[^:]+:\s*", "", raw_name)
+            vendor_models[vname].append({
+                "slug": slug,
+                "name": mname,
+                "share_pct": share_val * 100.0,
+                "tokens": t_tok
+            })
+
+        results = []
+        for vname, spend_share in sorted(vendor_spend.items(), key=lambda x: x[1], reverse=True):
+            v_models = sorted(vendor_models[vname], key=lambda x: x["share_pct"], reverse=True)
+            results.append({
+                "vendor": vname,
+                "spend_share_pct": spend_share * 100.0,
+                "total_tokens": vendor_tokens[vname],
+                "top_model": v_models[0] if v_models else None,
+                "models": v_models
+            })
+        return results
 
     def generate_report(self, target_end_date: Optional[str] = None) -> Path:
         """Executes analysis and generates Markdown document: key data first, methodology last."""
@@ -672,11 +825,15 @@ class ModelReportGenerator:
             report_snap_dt = end_date
         self._load_local_datasets(target_date=report_snap_dt)
 
-        logging.info("Fetching official 7-day model metrics...")
+        logging.info("Fetching official 7-day model metrics (tokens)...")
         official_items = self.fetch_official_7day_models(target_date=end_date)
 
+        logging.info("Fetching official 7-day model metrics (spend)...")
+        spend_items = self.fetch_official_7day_models_spend(target_date=end_date)
+
         logging.info("Computing rankings, token volumes, spends, and pricing...")
-        top5_tokens, top5_spend = self.compute_model_metrics(official_items, rolling_dates)
+        top5_tokens, top5_spend = self.compute_model_metrics(official_items, rolling_dates, spend_items=spend_items)
+        top5_vendors = self.compute_vendor_metrics(spend_items, official_items)[:5]
 
         unique_models = {}
         for m in top5_tokens + top5_spend:
@@ -703,34 +860,44 @@ class ModelReportGenerator:
         doc.append("## 一、 核心榜单数据（榜单与首选应用）\n\n")
 
         doc.append("### 1. Token 物理使用量前 5 模型\n\n")
-        doc.append("| 排名 | 模型名称 | 7天 Token 消耗 | 7天消费金额 (百万美元) | 实际有效单价 ($/M) | I/O 比率 | 首选偏好应用 (Top 1 份额) |\n")
-        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---|\n")
+        doc.append("| 排名 | 模型名称 | 7天 Token 消耗 | 全平台消费份额占比 | I/O 比率 | 标称输入单价 ($/M) | 标称输出单价 ($/M) | 首选偏好应用 (Top 1 份额) |\n")
+        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---|\n")
         for i, m in enumerate(top5_tokens, 1):
             tok_str = f"{m['total_tokens'] / 1e12:.3f} T" if m['total_tokens'] >= 1e12 else f"{m['total_tokens'] / 1e9:.2f} B"
-            spend_m = m['spend_usd'] / 1e6
-            spend_str = f"{spend_m:.4f}" if 0 < spend_m < 0.01 else f"{spend_m:.3f}"
+            share_str = f"{m['spend_share_pct']:.2f}%" if m['spend_share_pct'] > 0 else "N/A"
             apps = model_apps_map.get(m['slug'], [])
             app_str = f"{apps[0]['name']} ({apps[0].get('share_pct', 0.0):.1f}%)" if apps else "N/A"
             doc.append(
-                f"| {i} | {m['name']} | **{tok_str}** | {spend_str} | **${m['empirical_eff_p_per_m']:.4f}** | {m['io_ratio']:.1f}:1 | {app_str} |\n"
+                f"| {i} | {m['name']} | **{tok_str}** | **{share_str}** | {m['io_ratio']:.1f}:1 | ${m['prompt_p_per_m']:.4f} | ${m['comp_p_per_m']:.4f} | {app_str} |\n"
             )
 
-        doc.append("\n### 2. 消费金额前 5 模型\n\n")
-        doc.append("| 排名 | 模型名称 | 7天消费金额 (百万美元) | 7天 Token 消耗 | 实际有效单价 ($/M) | I/O 比率 | 首选偏好应用 (Top 1 份额) |\n")
-        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---|\n")
+        doc.append("\n### 2. 全平台消费份额前 5 模型\n\n")
+        doc.append("| 排名 | 模型名称 | 全平台消费份额占比 | 7天 Token 消耗 | I/O 比率 | 标称输入单价 ($/M) | 标称输出单价 ($/M) | 首选偏好应用 (Top 1 份额) |\n")
+        doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---|\n")
         for i, m in enumerate(top5_spend, 1):
             tok_str = f"{m['total_tokens'] / 1e12:.3f} T" if m['total_tokens'] >= 1e12 else f"{m['total_tokens'] / 1e9:.2f} B"
-            spend_m = m['spend_usd'] / 1e6
-            spend_str = f"{spend_m:.4f}" if 0 < spend_m < 0.01 else f"{spend_m:.3f}"
+            share_str = f"{m['spend_share_pct']:.2f}%" if m['spend_share_pct'] > 0 else "N/A"
             apps = model_apps_map.get(m['slug'], [])
             app_str = f"{apps[0]['name']} ({apps[0].get('share_pct', 0.0):.1f}%)" if apps else "N/A"
             doc.append(
-                f"| {i} | {m['name']} | **{spend_str}** | {tok_str} | **${m['empirical_eff_p_per_m']:.4f}** | {m['io_ratio']:.1f}:1 | {app_str} |\n"
+                f"| {i} | {m['name']} | **{share_str}** | {tok_str} | {m['io_ratio']:.1f}:1 | ${m['prompt_p_per_m']:.4f} | ${m['comp_p_per_m']:.4f} | {app_str} |\n"
+            )
+
+        doc.append("\n### 3. 全平台消费份额前 5 厂商\n\n")
+        doc.append("| 排名 | 厂商名称 | 7天全平台消费份额占比 | 7天 Token 消耗总量 | 主力拉动模型 (单模型消费份额) |\n")
+        doc.append("|:---:|:---|:---:|:---:|:---|\n")
+        for i, v in enumerate(top5_vendors, 1):
+            v_tok = v["total_tokens"]
+            v_tok_str = f"{v_tok / 1e12:.3f} T" if v_tok >= 1e12 else f"{v_tok / 1e9:.2f} B"
+            top_m = v["top_model"]
+            m_label = f"{top_m['name']} ({top_m['share_pct']:.2f}%)" if top_m else "N/A"
+            doc.append(
+                f"| {i} | {v['vendor']} | **{v['spend_share_pct']:.2f}%** | {v_tok_str} | {m_label} |\n"
             )
         doc.append("\n---\n\n")
 
         # ==========================================
-        # 二、 各模型单项详细数据（包含偏好应用与场景分布）
+        # 二、 各模型详细指标数据
         # ==========================================
         doc.append("## 二、 各模型详细指标数据\n\n")
         
@@ -739,14 +906,13 @@ class ModelReportGenerator:
             slug = m["slug"]
             apps = model_apps_map.get(slug, [])
             scenarios = model_scenarios_map.get(slug, {})
-            spend_m = m['spend_usd'] / 1e6
 
             doc.append(f"#### 1.{i} {m['name']} (`{slug}`)\n\n")
             doc.append(f"- **总消耗 Token**：`{m['total_tokens']:,}` ({m['total_tokens']/1e12:.3f}T Tokens)\n")
-            doc.append(f"- **实际结算总金额**：`{spend_m:.4f}` 百万美元（`${m['spend_usd']:,.2f}`）\n")
+            if m['spend_share_pct'] > 0:
+                doc.append(f"- **全平台消费份额占比**：`{m['spend_share_pct']:.2f}%`\n")
             doc.append(f"- **Token 输入/输出**：输入 Prompt `{m['prompt_tokens']:,}` | 输出 Completion `{m['completion_tokens']:,}` | **I/O 比例：`{m['io_ratio']:.2f}:1`**\n")
-            doc.append(f"- **单价指标**：标称输入 `${m['prompt_p_per_m']:.2f}/M` | 标称输出 `${m['comp_p_per_m']:.2f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
-            doc.append(f"- **有效单价与节省**：标称综合单价 `${m['nominal_p_per_m']:.4f}/M` | **实际有效单价 `${m['empirical_eff_p_per_m']:.4f}/M`** | 缓存与综合节省率 `{m['savings_pct']:.1f}%`\n")
+            doc.append(f"- **官方标称单价**：标称输入 `${m['prompt_p_per_m']:.4f}/M` | 标称输出 `${m['comp_p_per_m']:.4f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
             if apps:
                 app_items = [
                     f"{idx}. **{a['name']}**（流量份额 `{a.get('share_pct', 0.0):.1f}%`，累计 `{a['tokens']}` tokens）"
@@ -760,19 +926,18 @@ class ModelReportGenerator:
                 doc.append(f"- **优势细分场景**：`{top_tag}`\n")
             doc.append("\n")
 
-        doc.append("### 2. 消费金额前 5 模型指标\n\n")
+        doc.append("### 2. 全平台消费份额前 5 模型指标\n\n")
         for i, m in enumerate(top5_spend, 1):
             slug = m["slug"]
             apps = model_apps_map.get(slug, [])
             scenarios = model_scenarios_map.get(slug, {})
-            spend_m = m['spend_usd'] / 1e6
 
             doc.append(f"#### 2.{i} {m['name']} (`{slug}`)\n\n")
-            doc.append(f"- **实际结算总金额**：**`{spend_m:.4f}` 百万美元**（`${m['spend_usd']:,.2f}`）\n")
+            if m['spend_share_pct'] > 0:
+                doc.append(f"- **全平台消费份额占比**：**`{m['spend_share_pct']:.2f}%`**\n")
             doc.append(f"- **总消耗 Token**：`{m['total_tokens']:,}` ({m['total_tokens']/1e12:.3f}T Tokens) | 调用请求数：`{m['request_count']:,}`\n")
             doc.append(f"- **Token 输入/输出**：输入 Prompt `{m['prompt_tokens']:,}` | 输出 Completion `{m['completion_tokens']:,}` | **I/O 比例：`{m['io_ratio']:.2f}:1`**\n")
-            doc.append(f"- **单价指标**：标称输入 `${m['prompt_p_per_m']:.2f}/M` | 标称输出 `${m['comp_p_per_m']:.2f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
-            doc.append(f"- **有效单价与节省**：标称综合单价 `${m['nominal_p_per_m']:.4f}/M` | **实际有效单价 `${m['empirical_eff_p_per_m']:.4f}/M`** | 缓存与综合节省率 `{m['savings_pct']:.1f}%`\n")
+            doc.append(f"- **官方标称单价**：标称输入 `${m['prompt_p_per_m']:.4f}/M` | 标称输出 `${m['comp_p_per_m']:.4f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
             if apps:
                 app_items = [
                     f"{idx}. **{a['name']}**（流量份额 `{a.get('share_pct', 0.0):.1f}%`，累计 `{a['tokens']}` tokens）"
@@ -796,60 +961,31 @@ class ModelReportGenerator:
             doc.extend(scenario_section)
 
         # ==========================================
-        # 四、 价格计算所用参数明细表（注明采用的参数与具体数值）
+        # 四、 榜单指标与分析方法论
         # ==========================================
-        doc.append("## 四、 价格计算所用参数明细表\n\n")
-        doc.append("| 模型 Permaslug | 标称输入价 $P_{\\text{prompt}}$ ($/M) | 缓存读取价 $P_{\\text{cache\\_read}}$ ($/M) | 标称输出价 $P_{\\text{comp}}$ ($/M) | AA 加权输入价 $P_{\\text{wip}}$ ($/M) | 7天输入Token ($N_p$) | 7天输出Token ($N_c$) | I/O比率 ($r$) | 标称综合价 ($/M) | 实际结算单价 ($/M) | 实际总消费 (百万美元) |\n")
-        doc.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
-
-        for slug, m in unique_models.items():
-            wip_repr = f"${m['wip_per_m']:.4f}" if m['wip_per_m'] is not None else "N/A"
-            doc.append(
-                f"| `{slug}` | ${m['prompt_p_per_m']:.2f} | ${m['cache_read_p_per_m']:.4f} | ${m['comp_p_per_m']:.2f} | {wip_repr} | {m['prompt_tokens']:,} | {m['completion_tokens']:,} | {m['io_ratio']:.2f}:1 | ${m['nominal_p_per_m']:.4f} | **${m['empirical_eff_p_per_m']:.4f}** | {m['spend_usd']/1e6:.4f} |\n"
-            )
-
-        doc.append("\n**参数说明**：\n")
-        doc.append("- $P_{\\text{prompt}}$：标称未命中缓存输入单价（单位：USD / 1,000,000 Tokens，来源：OpenRouter 官方模型目录 API）。\n")
-        doc.append("- $P_{\\text{cache\\_read}}$：Prompt 缓存读取单价（单位：USD / 1,000,000 Tokens，来源：pricing.input_cache_read 字段）。\n")
-        doc.append("- $P_{\\text{comp}}$：标称输出生成单价（单位：USD / 1,000,000 Tokens，来源：pricing.completion 字段）。\n")
-        doc.append("- $P_{\\text{wip}}$：Artificial Analysis 缓存加权输入价（单位：USD / 1,000,000 Tokens，来源：Artificial Analysis 评测集）。\n")
-        doc.append("- $N_p, N_c, r$：7 天物理统计输入 Token、输出 Token 及二者比率 $r = N_p / N_c$（来源：OpenRouter 官方 rankings/models）。\n")
-        doc.append("- 实际总消费：7 天实际结算扣费总额（单位：百万美元，来源：OpenRouter 官方指标 total_usage）。\n\n")
-
-        doc.append("---\n\n")
-
-        # ==========================================
-        # 五、 价格测算与分析方法论（放最后）
-        # ==========================================
-        doc.append("## 五、 价格测算与分析方法论\n\n")
-        doc.append("设模型定价与调用结构参数如下：\n")
-        doc.append("- $P_{\\text{prompt}}$：非缓存输入 Token 标称单价（$\\$/\\text{M Tokens}$）\n")
-        doc.append("- $P_{\\text{cache\\_read}}$：KV 缓存命中读取单价（$\\$/\\text{M Tokens}$）\n")
-        doc.append("- $P_{\\text{comp}}$：输出 Completion Token 标称单价（$\\$/\\text{M Tokens}$）\n")
-        doc.append("- $N_p$：提示词输入 Token 总量，$N_c$：模型生成输出 Token 总量，$T = N_p + N_c$\n")
-        doc.append("- $r = N_p / N_c$：输入输出比（Input/Output Ratio）\n")
-        doc.append("- $h$：上下文缓存有效命中率（Cache Hit Ratio，$0 \\le h \\le 1$）\n\n")
-        doc.append("**1. 未考虑缓存时的标称综合单价（Nominal Blended Price）**：\n")
-        doc.append("$$\\bar{P}_{\\text{no\\_cache}} = \\frac{N_p \\cdot P_{\\text{prompt}} + N_c \\cdot P_{\\text{comp}}}{N_p + N_c} = \\frac{r \\cdot P_{\\text{prompt}} + P_{\\text{comp}}}{r + 1}$$\n\n")
-        doc.append("**2. 考虑缓存后的理论加权综合单价（Effective Blended Price with Cache）**：\n")
-        doc.append("$$\\bar{P}_{\\text{cached}} = \\frac{(1-h) N_p P_{\\text{prompt}} + h N_p P_{\\text{cache\\_read}} + N_c P_{\\text{comp}}}{N_p + N_c} = \\frac{r \\cdot \\left[(1-h) P_{\\text{prompt}} + h P_{\\text{cache\\_read}}\\right] + P_{\\text{comp}}}{r + 1}$$\n\n")
-        doc.append("**3. 经验实际结算有效单价（Empirical Realized Price）**：\n")
-        doc.append("$$\\bar{P}_{\\text{empirical}} = \\frac{\\text{实际总消费 (USD)}}{\\text{Total Tokens}} \\times 10^6 = \\frac{\\text{实际总消费 (百万美元)} \\times 10^{12}}{N_p + N_c} \\quad (\\$/\\text{M Tokens})$$\n\n")
-        doc.append("**4. 综合节省率（Cost Reduction Rate）**：\n")
-        doc.append("$$\\Delta_{\\text{saving}} = \\frac{\\bar{P}_{\\text{no\\_cache}} - \\bar{P}_{\\text{empirical}}}{\\bar{P}_{\\text{no\\_cache}}} \\times 100\\%$$\n\n")
-        doc.append("**5. 首选偏好应用流量份额（Top Apps Traffic Share）**：\n")
+        doc.append("## 四、 榜单指标与分析方法论\n\n")
+        doc.append("本报告核心指标的统计定义与计算口径如下：\n\n")
+        doc.append("**1. 物理 Token 消耗与输入输出比（Input/Output Ratio）**：\n")
+        doc.append("设模型在统计周期内的提示词输入 Token 为 \\(N_p\\)，模型生成输出 Token 为 \\(N_c\\)，总物理消耗 \\(T = N_p + N_c\\)。\n")
+        doc.append("输入输出比 \\(r\\) 反映应用的典型交互模式：\n")
+        doc.append("\\[ r = \\frac{N_p}{N_c} \\]\n\n")
+        doc.append("在智能体协作、代码重构等长上下文场景中，通常呈现极高的 \\(r\\)（如 50:1 至 100:1 以上）。\n\n")
+        doc.append("**2. 全平台消费份额占比（Platform Spend Share）**：\n")
+        doc.append("数据来源于 OpenRouter 官方 7 天滚动支出排行榜接口（`GET /api/frontend/v1/rankings/models?metric=spend`）。接口返回的 `rankingMetricValue` 直接给出了过去 7 天内各模型占全平台开发者总支出的相对比例：\n")
+        doc.append("\\[ \\text{Spend Share}_i = \\text{rankingMetricValue}_i \\times 100\\% \\]\n\n")
+        doc.append("该份额直接反映模型在全平台商业变现与开发者真实付费预算层面的市场占有率。\n\n")
+        doc.append("**3. 全平台厂商消费份额聚合方法（Vendor Spend Share Methodology）**：\n")
+        doc.append("厂商消费份额基于模型研发/发布厂商口径（Model Creator），通过将全平台所有模型的 7 天滚动支出指标（`rankingMetricValue`）按模型命名空间（Permaslug 组织名前缀）归集累加得出：\n")
+        doc.append("\\[ \\text{Spend Share}_{\\text{Vendor}} = \\sum_{m \\in \\text{Vendor}} \\text{rankingMetricValue}_m \\times 100\\% \\]\n\n")
+        doc.append("该指标揭示了平台开发者在各基础大模型厂商之间的真实付费预算分配与商业生态格局。\n\n")
+        doc.append("**4. 首选偏好应用流量份额（Top Apps Traffic Share）**：\n")
         doc.append("OpenRouter 官方模型详情页中的 Top Apps 展示了各客户端自接入以来的全量累计消耗。为消除绝对累计量与 7 天统计周期之间的量纲差异，报告取前序主要应用的流量比重计算相对偏好份额：\n")
-        doc.append("$$\\text{Share}_i = \\frac{\\text{Tokens}_i}{\\sum_{k \\in \\text{Top Apps}} \\text{Tokens}_k} \\times 100\\%$$\n\n")
+        doc.append("\\[ \\text{Share}_i = \\frac{\\text{Tokens}_i}{\\sum_{k \\in \\text{Top Apps}} \\text{Tokens}_k} \\times 100\\% \\]\n\n")
         spend_win_days = self.task_spend.get("spend", {}).get("windowDays", 30)
-        doc.append("**6. 优势细分场景与场景分布统计口径（Task Scenario Methodology）**：\n")
+        doc.append("**5. 优势细分场景与场景分布统计口径（Task Scenario Methodology）**：\n")
         doc.append(f"- **数据源与接口**：来自 OpenRouter 官方细分任务支出接口（`GET /api/frontend/v1/rankings/task-spend`）。\n")
         doc.append(f"- **统计时间窗口**：根据官方接口返回的 `windowDays: {spend_win_days}` 字段，统计基于**过去 {spend_win_days} 天滚动窗口（Rolling {spend_win_days}-Day Window）**的全平台美元消费支出（Spend Share），而非 Token 数量。\n")
         doc.append(f"- **指标作用与互补性**：核心榜单聚焦 7 天滚动用量以捕捉实时流量爆发；任务场景分布采用 30 天统计窗口以平滑短期偶然波动，揭示各模型在垂直领域生产环境与智能体流程中的中长期商业渗透与核心优势壁垒。各模型详细指标中的“优势细分场景”为该模型在过去 {spend_win_days} 天内取得市场份额第一（Top 1）的细分任务标签（若无公开细分数据则不展示）。\n\n")
-        doc.append("**7. 实际有效单价成因与服务商竞价解耦说明（Provider Marketplace & Cache Disambiguation）**：\n")
-        doc.append("- **双驱动成因**：报告中呈现的“实际有效单价”（$\\bar{P}_{\\text{empirical}}$）显著低于“标称综合单价”（$\\bar{P}_{\\text{no\\_cache}}$），是**多服务商竞价路由折扣（Provider Marketplace Pricing）**与**上下文缓存机制（Prompt Caching）**双重驱动的综合结果。\n")
-        doc.append("- **服务商竞价机制**：OpenRouter 属于多服务商聚合平台，以 DeepSeek V4.1 Flash 为例，平台接入了 32 家第三方算力提供商。各服务商实际挂牌的非缓存输入单价普遍大幅低于官方标称价（如部分服务商基础输入价低至 $0.033~$0.05/M，相较标称价折扣达 80%~90%）。平台智能路由会将大量请求分发至具备成本优势的服务商。\n")
-        doc.append("- **缓存读取机制**：支持上下文缓存的服务商对命中的 Prompt 前缀进一步给予低至 $0.003~$0.006/M 的缓存读取单价。\n")
-        doc.append("- **指标对比本质**：“标称综合单价”仅反映按照官方单一目录标准、在假定 0% 缓存时的**理论基准成本上限**；“实际有效单价”则反映平台用户在实际多服务商路由与缓存交互下的**真实加权成交均价**。“综合节省率”代表实际支出相对该理论上限的整体优化幅度，不应被单一等同于物理缓存命中率。\n\n")
 
         # Write file
         content = "".join(doc)

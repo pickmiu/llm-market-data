@@ -92,7 +92,9 @@ def main(args: list = None) -> int:
             if "coding_apps" in results:
                 print(f"  - Coding apps history & leaderboard snapshot: {results['coding_apps']}")
             if "rankings_models" in results:
-                print(f"  - Rankings models (rolling 7-day usage & spend) snapshot: {results['rankings_models']}")
+                print(f"  - Rankings models (rolling 7-day usage) snapshot: {results['rankings_models']}")
+            if "rankings_models_spend" in results:
+                print(f"  - Rankings models (rolling 7-day spend) snapshot: {results['rankings_models_spend']}")
             if "rankings_daily" in results:
                 stats = results["rankings_daily"]
                 print(f"  - Daily rankings: fetched {stats['fetched_days']} days, remaining missing {stats['remaining_days']} days")

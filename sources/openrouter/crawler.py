@@ -2,7 +2,7 @@ import re
 import json
 import logging
 import requests
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class OpenRouterWebCrawler:
     """Client for OpenRouter frontend public leaderboards (apps, task-spend, session-cost, benchmarks, performance, transcription, coding_apps)."""
@@ -52,9 +52,10 @@ class OpenRouterWebCrawler:
         """Fetches performance data (throughput tok/s, latency, best providers and prices)."""
         return self._fetch_json("performance")
 
-    def fetch_rankings_models(self) -> Dict[str, Any]:
-        """Fetches Top Models rankings (rolling 7-day usage, prompt/completion tokens, and request counts)."""
-        return self._fetch_json("models")
+    def fetch_rankings_models(self, metric: Optional[str] = None) -> Dict[str, Any]:
+        """Fetches Top Models rankings (rolling 7-day usage, prompt/completion tokens, or spend)."""
+        ep = "models" if not metric else f"models?metric={metric}"
+        return self._fetch_json(ep)
 
     def fetch_transcription(self) -> Dict[str, Any]:
         """Fetches Transcription (Speech-to-Text) leaderboard from openrouter.ai/rankings/transcription."""
