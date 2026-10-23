@@ -1,0 +1,3368 @@
+{
+  "date": "2026-10-23",
+  "fetched_at": "2026-10-23T00:30:48.108463+00:00",
+  "status": "ok",
+  "error": null,
+  "data": {
+    "spend": {
+      "windowDays": 30,
+      "macroCategories": [
+        {
+          "key": "code",
+          "label": "Code",
+          "spendShare": 0.2689056586020397
+        },
+        {
+          "key": "data",
+          "label": "Data",
+          "spendShare": 0.10283810541654206
+        },
+        {
+          "key": "agent",
+          "label": "Agent",
+          "spendShare": 0.30988271154373415
+        },
+        {
+          "key": "general",
+          "label": "General",
+          "spendShare": 0.31837352443768374
+        }
+      ],
+      "tasks": [
+        {
+          "tag": "agent:workflow_execution",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.20407530480146518,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.18989283089662168,
+              "deltaPp": 18.951464574211467
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.10298038585501212,
+              "deltaPp": -1.584543504260555
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.06051370765573876,
+              "deltaPp": -1.137597240978299
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.05186669314335505,
+              "deltaPp": -4.278777403194412
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.0499909800663108,
+              "deltaPp": -0.3394846468843603
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.04416410997908321,
+              "deltaPp": -3.177691382045199
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04159271389304025,
+              "deltaPp": 2.7925617259186493
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.03848025934609505,
+              "deltaPp": 3.848025934609505
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.038301721550633376,
+              "deltaPp": 0.42254696969127803
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.030010300224979657,
+              "deltaPp": -0.5487975812813829
+            }
+          ]
+        },
+        {
+          "tag": "classification_tagging",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.1160621645281269,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.09557586737357739,
+              "deltaPp": 9.536590701185416
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.06143428321075048,
+              "deltaPp": 0.6374464737646517
+            },
+            {
+              "model": "google/gemini-3.1-pro-preview-20260219",
+              "share": 0.053430929640695034,
+              "deltaPp": -2.0036142205501974
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.052370135181497766,
+              "deltaPp": 1.007801797933662
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.045710574262353885,
+              "deltaPp": 2.321663012185937
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.03519870267599854,
+              "deltaPp": -0.6491723559064424
+            },
+            {
+              "model": "openai/gpt-6.1-sol-20260929",
+              "share": 0.0342927541441172,
+              "deltaPp": 3.4292754144117197
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.030017550403746394,
+              "deltaPp": -1.2170934120584656
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.02728311303602717,
+              "deltaPp": 1.7971512948104098
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.026390355967455592,
+              "deltaPp": -1.2861318316147488
+            }
+          ]
+        },
+        {
+          "tag": "code:general_impl",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.09349551356344156,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.16851849060558483,
+              "deltaPp": 16.83023798446191
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.09038500557482974,
+              "deltaPp": -2.829882634882286
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.08920582364253798,
+              "deltaPp": 2.734369550212681
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.06887715542844226,
+              "deltaPp": 5.739357688495562
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.06843508567805015,
+              "deltaPp": -9.500723148968051
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.0586517215703039,
+              "deltaPp": -1.220844292394107
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.05406394586365578,
+              "deltaPp": 2.3701506984368748
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.05010674394825008,
+              "deltaPp": -4.308968423955227
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.033118005612632305,
+              "deltaPp": 3.3118005612632304
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.02250502631885377,
+              "deltaPp": -0.8719188490494211
+            }
+          ]
+        },
+        {
+          "tag": "agent:multi_step_planning",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.07603200945504028,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.1689362693822059,
+              "deltaPp": 16.84269531853196
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.10835473288938632,
+              "deltaPp": -2.866607591210421
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.06905427099028072,
+              "deltaPp": -2.184142819334034
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.06583583189178381,
+              "deltaPp": -2.631189932628296
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.053271216468439256,
+              "deltaPp": -3.326101145273723
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.044232620172463114,
+              "deltaPp": -0.5403963747711876
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.042216019514919885,
+              "deltaPp": 2.885659263131302
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.036368218818711294,
+              "deltaPp": -0.05122006131103654
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.032580874300032744,
+              "deltaPp": 3.2580874300032745
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.02890053012441075,
+              "deltaPp": -0.9608484357952575
+            }
+          ]
+        },
+        {
+          "tag": "data:extraction",
+          "macroCategory": "data",
+          "spendShareOfTotal": 0.07243509661643978,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.09547782084659161,
+              "deltaPp": 9.532683267817145
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.045497510617760986,
+              "deltaPp": 2.6157727593857665
+            },
+            {
+              "model": "google/gemini-3-flash-preview-20251217",
+              "share": 0.03642418722132936,
+              "deltaPp": 1.0257488076592134
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.035761878205630794,
+              "deltaPp": -1.0698776856724455
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.03455685083455012,
+              "deltaPp": -0.21068513184137952
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.03340157911914059,
+              "deltaPp": 2.3164550784621762
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03053298570130117,
+              "deltaPp": -3.130008768697739
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.029933641599043385,
+              "deltaPp": 1.423553272096363
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.029599720588556006,
+              "deltaPp": -1.2637737507148485
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.028627675872486595,
+              "deltaPp": 2.8627675872486593
+            }
+          ]
+        },
+        {
+          "tag": "code:file_read_write",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.045457104125036,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.17880428180287464,
+              "deltaPp": 17.829129043882713
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.13216528767340074,
+              "deltaPp": -6.210735244856807
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.07193700852385411,
+              "deltaPp": 0.7956991029848037
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.0711199774406099,
+              "deltaPp": -1.5578178993771632
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.06272186325191122,
+              "deltaPp": 2.425037747892568
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04320547353264539,
+              "deltaPp": 2.802115831640711
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.04303162758141045,
+              "deltaPp": -1.5641257808273585
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.041645237725427185,
+              "deltaPp": 4.164523772542719
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.040140381805869214,
+              "deltaPp": -7.317832997901413
+            },
+            {
+              "model": "openai/gpt-6.1-sol-20260929",
+              "share": 0.029348314461416163,
+              "deltaPp": 2.934831446141616
+            }
+          ]
+        },
+        {
+          "tag": "code:debugging",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.04390789454232202,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.11394818777055325,
+              "deltaPp": 11.37773285289504
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.11259219020923789,
+              "deltaPp": 5.3635914136656675
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.08717473515658038,
+              "deltaPp": 0.7737978108872279
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.0752322959115429,
+              "deltaPp": -7.176569500767088
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.06618792814130578,
+              "deltaPp": 5.1961558052826335
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.05582413482919285,
+              "deltaPp": -1.0472727514157634
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.037736529270776864,
+              "deltaPp": -0.589120332274927
+            },
+            {
+              "model": "x-ai/grok-4.7-20260916",
+              "share": 0.03734991559222875,
+              "deltaPp": 3.6407614003428153
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.03616651051346031,
+              "deltaPp": -6.219584100948628
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.030497815820882006,
+              "deltaPp": 0.04032773196929011
+            }
+          ]
+        },
+        {
+          "tag": "content_writing",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.03926905584846221,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.10030804588615669,
+              "deltaPp": 9.99673942681761
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.05921340954775105,
+              "deltaPp": 5.921340954775105
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.04309247439940969,
+              "deltaPp": -1.2492482460685608
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04250498842223691,
+              "deltaPp": 3.39055677388709
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.041415809279452806,
+              "deltaPp": 2.3715565658236457
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.04068416872153941,
+              "deltaPp": -1.255972937739349
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.03873396308582427,
+              "deltaPp": 2.4308833321223355
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03777075046969488,
+              "deltaPp": -2.798687820000915
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.03647999665956152,
+              "deltaPp": -0.09517478555421816
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.034374675352502285,
+              "deltaPp": -4.52885326807539
+            }
+          ]
+        },
+        {
+          "tag": "roleplay_fiction",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.03768137246828445,
+          "models": [
+            {
+              "model": "anthropic/claude-4.5-sonnet-20250929",
+              "share": 0.08777188457633128,
+              "deltaPp": 3.486893172662254
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.06199134556218365,
+              "deltaPp": 6.180615159833805
+            },
+            {
+              "model": "google/gemini-3-flash-preview-20251217",
+              "share": 0.055222221072662434,
+              "deltaPp": -0.46940028670984235
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.04787423513228229,
+              "deltaPp": 2.2138074298221486
+            },
+            {
+              "model": "anthropic/claude-4.6-opus-20260205",
+              "share": 0.04674916238668397,
+              "deltaPp": -0.8854333729520776
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.041346444220586094,
+              "deltaPp": -1.5378943378457381
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.0377693647238765,
+              "deltaPp": -1.7990494331303932
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.03598171867487068,
+              "deltaPp": 0.0614459363043815
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.033700733537741244,
+              "deltaPp": 0.349123546297965
+            },
+            {
+              "model": "deepseek/deepseek-v3.2-20251201",
+              "share": 0.02812307293667594,
+              "deltaPp": -0.36680012286289637
+            }
+          ]
+        },
+        {
+          "tag": "qa_knowledge",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.034600951132206584,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.11533767421047128,
+              "deltaPp": 11.468933995808396
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.11240203349948362,
+              "deltaPp": 3.1422566046014344
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.047474633342464434,
+              "deltaPp": -0.6292785418353048
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.04707590666175311,
+              "deltaPp": -0.9599679507781802
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.038896479684780015,
+              "deltaPp": 2.549111403531575
+            },
+            {
+              "model": "openai/gpt-6.1-sol-20260929",
+              "share": 0.0315541663233512,
+              "deltaPp": 3.15541663233512
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.03120773679620582,
+              "deltaPp": 3.120773679620582
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.02934697936076145,
+              "deltaPp": -6.936466244300371
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.028212728511602125,
+              "deltaPp": -2.777409935636316
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.02698706718050935,
+              "deltaPp": -0.4353916563735117
+            }
+          ]
+        },
+        {
+          "tag": "data:transformation",
+          "macroCategory": "data",
+          "spendShareOfTotal": 0.03040300880010229,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.10429540974838118,
+              "deltaPp": 10.42373103728505
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.0880138938096542,
+              "deltaPp": 3.738220369276104
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.06408291052458262,
+              "deltaPp": 4.837697272587304
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.04758968707818031,
+              "deltaPp": 2.910560635744084
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.04642793269241728,
+              "deltaPp": -2.60888523507036
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.03479395605784582,
+              "deltaPp": 2.5752345803547865
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.03348850558205761,
+              "deltaPp": -0.6141186560312678
+            },
+            {
+              "model": "anthropic/claude-4.8-opus-20260528",
+              "share": 0.033324234199606395,
+              "deltaPp": 0.41416257533789974
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03110460244316429,
+              "deltaPp": -1.7034529178267133
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.030843812012177743,
+              "deltaPp": -2.6936791938165507
+            }
+          ]
+        },
+        {
+          "tag": "code:review_security",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.028232810674937103,
+          "models": [
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.102171131089843,
+              "deltaPp": -3.7493321123683323
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.09410539576141046,
+              "deltaPp": 9.346272919947829
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.08394531840037592,
+              "deltaPp": -2.6077457967041124
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.07215006859931963,
+              "deltaPp": 0.38784707798974194
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.06770072448223696,
+              "deltaPp": -0.03375696212911117
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.05296158644386814,
+              "deltaPp": 4.011668553706087
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.05133574757358541,
+              "deltaPp": -0.23900785187322277
+            },
+            {
+              "model": "openai/gpt-6.1-sol-20260929",
+              "share": 0.04558117639100739,
+              "deltaPp": 4.558117639100739
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.03916974532538734,
+              "deltaPp": -0.4356192353710861
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.03901661515049608,
+              "deltaPp": -3.4046977018400675
+            }
+          ]
+        },
+        {
+          "tag": "code:shell_execution",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.022989832313205085,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.11694757703243816,
+              "deltaPp": 11.663758453199348
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.11150886085888101,
+              "deltaPp": 4.666792716224667
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.08990817242985587,
+              "deltaPp": 2.891659119905296
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.08490187678716452,
+              "deltaPp": 0.017530945982567603
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.0611295668959326,
+              "deltaPp": 4.713844048917106
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.04851828133833211,
+              "deltaPp": -4.114174134931122
+            },
+            {
+              "model": "x-ai/grok-4.7-20260916",
+              "share": 0.047018179247531454,
+              "deltaPp": 4.5726384597401495
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.03818739026931037,
+              "deltaPp": 0.9453830031504077
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03733000018608255,
+              "deltaPp": -0.9736014200861245
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.035644571216754774,
+              "deltaPp": 1.5186404825058526
+            }
+          ]
+        },
+        {
+          "tag": "conversational_reply",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0224500009109886,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.21247279972249197,
+              "deltaPp": 21.230638894571225
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.07661353585400543,
+              "deltaPp": -1.4769209999732844
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.0499179185226492,
+              "deltaPp": -0.9123500905872544
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.040528597624068255,
+              "deltaPp": -4.7717553807182425
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.03550677983788611,
+              "deltaPp": 3.550677983788611
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.03506077288130698,
+              "deltaPp": 2.3466838050501697
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.033498757219171005,
+              "deltaPp": -1.135754328814774
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.02955403794479554,
+              "deltaPp": 0.8888960633807335
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.027277298737774396,
+              "deltaPp": -1.2708533954454397
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.025586994043850703,
+              "deltaPp": -1.2119898999310486
+            }
+          ]
+        },
+        {
+          "tag": "code:frontend_ui",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.015374236710649442,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.153751389043042,
+              "deltaPp": 15.330511261149752
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.07046587922202774,
+              "deltaPp": -0.05768588269418756
+            },
+            {
+              "model": "openai/gpt-6-astra-pro-20260903",
+              "share": 0.06652419233258589,
+              "deltaPp": -1.396928986921303
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.06179323850872351,
+              "deltaPp": -0.6574608291141661
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.06108677622024207,
+              "deltaPp": -10.087853771774384
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04938573096224678,
+              "deltaPp": 3.778981045313387
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.03340467365667922,
+              "deltaPp": -7.363890017250191
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.028235515730131944,
+              "deltaPp": 2.8235515730131944
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.026728189117007008,
+              "deltaPp": -0.6008622016809302
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.026328403616858547,
+              "deltaPp": 1.3298458777838231
+            }
+          ]
+        },
+        {
+          "tag": "research_report",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.014765063246863048,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.18256099011293633,
+              "deltaPp": 18.182330442430832
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.07310765487304684,
+              "deltaPp": -4.214671227642524
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.053873512164784615,
+              "deltaPp": -4.202809044461728
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.03973069442354303,
+              "deltaPp": 3.973069442354303
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.03908587417042356,
+              "deltaPp": 2.884539546766083
+            },
+            {
+              "model": "openai/gpt-5.6-terra-20260709",
+              "share": 0.03858063830623233,
+              "deltaPp": -0.40938738458669366
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.034275103802049865,
+              "deltaPp": 0.4859009674957254
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.03209249408311896,
+              "deltaPp": 2.3925985048914282
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03160551412075263,
+              "deltaPp": -4.596186975126542
+            },
+            {
+              "model": "openai/gpt-6-sol-20260922",
+              "share": 0.028148452760990542,
+              "deltaPp": 2.804668711916358
+            }
+          ]
+        },
+        {
+          "tag": "agent:tool_dispatch",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.013138532399919226,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.155134060388637,
+              "deltaPp": 15.505785126345128
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.08327638570547942,
+              "deltaPp": -8.6620504325598
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.06579637779779685,
+              "deltaPp": -0.7484707261954147
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.05255865746519457,
+              "deltaPp": 2.256919014053177
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.043617887665873184,
+              "deltaPp": 3.0483113291167303
+            },
+            {
+              "model": "openai/gpt-6-sol-20260922",
+              "share": 0.04013161595703273,
+              "deltaPp": 4.010951801082692
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03493210170810202,
+              "deltaPp": -2.591026243234317
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.034606456147448325,
+              "deltaPp": -2.685348587382377
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.033706391236199534,
+              "deltaPp": -0.7119362153598583
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.031035746003043808,
+              "deltaPp": 1.1287199984904381
+            }
+          ]
+        },
+        {
+          "tag": "customer_support",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.01294648757042541,
+          "models": [
+            {
+              "model": "google/gemini-3-flash-preview-20251217",
+              "share": 0.06481287032040366,
+              "deltaPp": -0.07210349620535017
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.056545721960683054,
+              "deltaPp": -1.4269233838321058
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.0512843844312691,
+              "deltaPp": -3.688276262557002
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.044215071713516844,
+              "deltaPp": -0.9457967154867054
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.04379416776006107,
+              "deltaPp": 4.379416776006107
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.04159821000455035,
+              "deltaPp": 4.119227127996053
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.03750474397550452,
+              "deltaPp": 1.5502877441663347
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.037500595475806524,
+              "deltaPp": 2.1648512931456634
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.03619940284115579,
+              "deltaPp": -1.6945333163616336
+            },
+            {
+              "model": "openai/gpt-4.1-2025-04-14",
+              "share": 0.034718345449995004,
+              "deltaPp": 0.9429371665493693
+            }
+          ]
+        },
+        {
+          "tag": "summarization",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.012192630217169324,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.11172304402367908,
+              "deltaPp": 11.168054229283554
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.08206332423027637,
+              "deltaPp": 1.8854108278562474
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.0444991831753768,
+              "deltaPp": -2.616165297883214
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.041782060081068405,
+              "deltaPp": 2.9277408854138756
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04169034012100743,
+              "deltaPp": 3.223541166721918
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.031534854746133545,
+              "deltaPp": -3.010947564833448
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.030293700319513124,
+              "deltaPp": -2.0738127503113715
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.029071347353002767,
+              "deltaPp": -0.6014582001930748
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.028088783248691452,
+              "deltaPp": 2.8088783248691453
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.02763126115979471,
+              "deltaPp": 2.7607235878261185
+            }
+          ]
+        },
+        {
+          "tag": "agent:web_search",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.011296662046255637,
+          "models": [
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.09894550235839475,
+              "deltaPp": -1.5369465267284776
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.08358586352601902,
+              "deltaPp": 8.312336868993366
+            },
+            {
+              "model": "openai/gpt-5.6-terra-20260709",
+              "share": 0.06044204988834159,
+              "deltaPp": -0.9380617871061245
+            },
+            {
+              "model": "openai/gpt-6-sol-20260922",
+              "share": 0.04621842311801307,
+              "deltaPp": 4.619172279804054
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.03739292277754139,
+              "deltaPp": -5.239888152455349
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.034324730841087225,
+              "deltaPp": -1.599181295315865
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.031227439626335538,
+              "deltaPp": 2.2717607318273094
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.03047226240564627,
+              "deltaPp": 0.26370985621685555
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.026418038566885942,
+              "deltaPp": -2.8589304977410706
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.026205642574325942,
+              "deltaPp": 0.3919909713868679
+            }
+          ]
+        },
+        {
+          "tag": "code:repo_scan",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.010379667956959788,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.17363627070660564,
+              "deltaPp": 17.361733050215864
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.11066416292913013,
+              "deltaPp": 2.6648600600363683
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.08521907422277601,
+              "deltaPp": -14.709631822705283
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.07786983269894746,
+              "deltaPp": -5.03626820629301
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.06102491664936375,
+              "deltaPp": 4.632466216179266
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.053314640746287285,
+              "deltaPp": 0.1648644101163478
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.05080383237225661,
+              "deltaPp": -0.26498087751532784
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.043441508606026774,
+              "deltaPp": 4.344150860602677
+            },
+            {
+              "model": "openai/gpt-6.1-sol-20260929",
+              "share": 0.029203718077196343,
+              "deltaPp": 2.920371807719634
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.026809572315697885,
+              "deltaPp": -0.12801713814727736
+            }
+          ]
+        },
+        {
+          "tag": "security_audit",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.00873076684068186,
+          "models": [
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.2775732140765609,
+              "deltaPp": 2.4188425657281742
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.10687561089173868,
+              "deltaPp": -2.1687836251599797
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.10453919032020999,
+              "deltaPp": 7.694177666560986
+            },
+            {
+              "model": "z-ai/glm-5.3-prime-20260921",
+              "share": 0.038990043487909645,
+              "deltaPp": 3.8990043487909647
+            },
+            {
+              "model": "x-ai/grok-4.7-20260916",
+              "share": 0.036005701610437264,
+              "deltaPp": 3.302121669814573
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-pro-ultraspeed-20260921",
+              "share": 0.03412900722001987,
+              "deltaPp": 3.4007777261962184
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.030665067372068002,
+              "deltaPp": 0.7155734209188302
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.026591157229968507,
+              "deltaPp": -2.605892379629288
+            },
+            {
+              "model": "anthropic/claude-4.8-opus-20260528",
+              "share": 0.024890517306526368,
+              "deltaPp": 0.06193957005889532
+            },
+            {
+              "model": "anthropic/claude-4.6-opus-20260205",
+              "share": 0.02090695917443711,
+              "deltaPp": -0.8778333075693849
+            }
+          ]
+        },
+        {
+          "tag": "math",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0084424817361198,
+          "models": [
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.22275807814774323,
+              "deltaPp": 7.282624794148626
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.11744218157322331,
+              "deltaPp": 11.742596149904116
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.06732176662155054,
+              "deltaPp": 2.9759924465767797
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.05873224993630786,
+              "deltaPp": -10.082093002550193
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.05302773877536059,
+              "deltaPp": 4.148333468449974
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04661533211252433,
+              "deltaPp": 2.9623332374268525
+            },
+            {
+              "model": "anthropic/claude-4.8-opus-20260528",
+              "share": 0.03256275995426848,
+              "deltaPp": 0.30731804202180185
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.03200146833867177,
+              "deltaPp": -4.488467977374444
+            },
+            {
+              "model": "openai/gpt-6.1-sol-20260929",
+              "share": 0.019470556719981744,
+              "deltaPp": 1.9470556719981744
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.01946132645136457,
+              "deltaPp": -0.9749070156604027
+            }
+          ]
+        },
+        {
+          "tag": "agent:memory_extraction",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.005340202841053822,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.1422662160197159,
+              "deltaPp": 14.210155529006881
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.07444056504728468,
+              "deltaPp": 5.533653981386502
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.04366705648358332,
+              "deltaPp": 0.335110973919419
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.04024139052847402,
+              "deltaPp": -2.1578722516770275
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.04019669469006314,
+              "deltaPp": 0.3999228791031241
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.03684232107148485,
+              "deltaPp": -0.9825681914157225
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.03656215197345611,
+              "deltaPp": 1.9969280926075472
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.03492125077680148,
+              "deltaPp": -0.8498202179693527
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.031905980329846706,
+              "deltaPp": 3.1905980329846706
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.031191941842198548,
+              "deltaPp": -1.104862611352083
+            }
+          ]
+        },
+        {
+          "tag": "code:devops_config",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.005062603271490279,
+          "models": [
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.3136190455360179,
+              "deltaPp": 21.350533213637448
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.10677142733477617,
+              "deltaPp": 10.677142733477616
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.08761374119315005,
+              "deltaPp": 7.066849654660954
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.06074366215194434,
+              "deltaPp": -4.519744695627124
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.056453052804632115,
+              "deltaPp": -2.887539679118943
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.05138616577932163,
+              "deltaPp": 2.1198676167036137
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.03346726844988202,
+              "deltaPp": 3.3467268449882024
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.029577680168262507,
+              "deltaPp": -4.6859242894099555
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.021903671953306798,
+              "deltaPp": -6.428026500613392
+            },
+            {
+              "model": "moonshotai/kimi-k2.6-20260420",
+              "share": 0.016288086040952977,
+              "deltaPp": 0.6224748291861618
+            }
+          ]
+        },
+        {
+          "tag": "finance_trading",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.004740672131286981,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.11497215873841377,
+              "deltaPp": 11.486075160573234
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.062300972721178904,
+              "deltaPp": 3.1658519810215044
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.051632177178985966,
+              "deltaPp": 0.9237798325847112
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.050280488226469675,
+              "deltaPp": -4.334377692102135
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.04617989136124426,
+              "deltaPp": -1.8601439137882438
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.045189449572171296,
+              "deltaPp": -1.227813591638243
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.03119972430366759,
+              "deltaPp": 2.004534448676254
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.03040078376506958,
+              "deltaPp": -0.05995947232880147
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.029741567310612744,
+              "deltaPp": -6.349313313961598
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.028991972550488795,
+              "deltaPp": 0.5515255252176425
+            }
+          ]
+        },
+        {
+          "tag": "code:sql_database",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.004005995443998457,
+          "models": [
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.1812814126332044,
+              "deltaPp": 15.611981434461175
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.16031030532927262,
+              "deltaPp": 15.968851562598536
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.059472042307641325,
+              "deltaPp": 5.947204230764132
+            },
+            {
+              "model": "openai/gpt-6-astra-pro-20260903",
+              "share": 0.043596543134407195,
+              "deltaPp": 3.8120164633206675
+            },
+            {
+              "model": "anthropic/claude-sonnet-5-20260630",
+              "share": 0.040653160617734135,
+              "deltaPp": -0.8817683581284569
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.03993293473569233,
+              "deltaPp": 2.8792301146558277
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.03850967702609989,
+              "deltaPp": -1.0883096335330231
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.03193414656971517,
+              "deltaPp": -6.558651850186465
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.02574872875154003,
+              "deltaPp": -3.520948554692338
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.02427065724106521,
+              "deltaPp": -0.5139179814516535
+            }
+          ]
+        },
+        {
+          "tag": "translation",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.003879632529510217,
+          "models": [
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.07445403868745759,
+              "deltaPp": -9.744109737441992
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.05906216861647581,
+              "deltaPp": 0.3787963226061585
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.04938442724631917,
+              "deltaPp": 3.694643500352072
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.04584814954530316,
+              "deltaPp": 3.998490949357658
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.044249102381413795,
+              "deltaPp": 3.289464500833392
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.03405324658912177,
+              "deltaPp": 3.4053246589121766
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.03317470792870565,
+              "deltaPp": 1.5481074063171167
+            },
+            {
+              "model": "google/gemini-3.1-pro-preview-20260219",
+              "share": 0.030590201973261025,
+              "deltaPp": 0.8589169581124295
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.02785616134492478,
+              "deltaPp": -10.063754661791972
+            },
+            {
+              "model": "anthropic/claude-4.6-sonnet-20260217",
+              "share": 0.027491591077550243,
+              "deltaPp": 0.7934163634771767
+            }
+          ]
+        },
+        {
+          "tag": "devops",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0026122452775583175,
+          "models": [
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.1816342051761944,
+              "deltaPp": 18.12541539098832
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.07451690896995314,
+              "deltaPp": 0.22509958701605187
+            },
+            {
+              "model": "openai/gpt-6-astra-20260903",
+              "share": 0.05829833455713036,
+              "deltaPp": -4.589982788838326
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.05735676002025565,
+              "deltaPp": 3.901382897496944
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5-20260928",
+              "share": 0.048961924175830424,
+              "deltaPp": 4.896192417583042
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.04736693640035215,
+              "deltaPp": -2.6548038764473816
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.0457527379155318,
+              "deltaPp": 0.7521572038573683
+            },
+            {
+              "model": "anthropic/claude-opus-5-20260723",
+              "share": 0.044941794441519876,
+              "deltaPp": -7.3437338163522545
+            },
+            {
+              "model": "anthropic/claude-fable-5.1-20260831",
+              "share": 0.04429223287394092,
+              "deltaPp": 1.421492534023339
+            },
+            {
+              "model": "anthropic/claude-4.8-opus-20260528",
+              "share": 0.04392144866727746,
+              "deltaPp": -2.7711530601801386
+            }
+          ]
+        }
+      ]
+    },
+    "tokens": {
+      "windowDays": 30,
+      "macroCategories": [
+        {
+          "key": "code",
+          "label": "Code",
+          "spendShare": 0.346796501684147
+        },
+        {
+          "key": "data",
+          "label": "Data",
+          "spendShare": 0.06498807424575623
+        },
+        {
+          "key": "agent",
+          "label": "Agent",
+          "spendShare": 0.344259246844192
+        },
+        {
+          "key": "general",
+          "label": "General",
+          "spendShare": 0.24395617722590465
+        }
+      ],
+      "tasks": [
+        {
+          "tag": "agent:workflow_execution",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.23091181689744672,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.16959128626160752,
+              "deltaPp": 12.080034527153392
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.12249735143527476,
+              "deltaPp": 12.249735143527477
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.08884424399808226,
+              "deltaPp": -2.2396458007892055
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.0741129901989178,
+              "deltaPp": -7.17185407825288
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.0549691826864769,
+              "deltaPp": 5.475227197816891
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.0404441508253167,
+              "deltaPp": 0.5135349150118075
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.039541179633268045,
+              "deltaPp": 3.9352727991225236
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.02712578045362142,
+              "deltaPp": 0.75208303641046
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.026059098867846905,
+              "deltaPp": -5.8250210442135755
+            },
+            {
+              "model": "tencent/hy3-20260706",
+              "share": 0.025285557515037426,
+              "deltaPp": -3.365236630749488
+            }
+          ]
+        },
+        {
+          "tag": "code:general_impl",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.11612905148186196,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.22139170163969094,
+              "deltaPp": 17.316552336974073
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.14558761264831058,
+              "deltaPp": 14.558761264831057
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.06306347215620657,
+              "deltaPp": -6.866061054522511
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.05902371904156825,
+              "deltaPp": 5.8717941960975715
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.053273490744446504,
+              "deltaPp": 1.1432361287588275
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.052921389941436886,
+              "deltaPp": -19.24644532184568
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.04273006999364534,
+              "deltaPp": 4.265317630574606
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.03224034602020566,
+              "deltaPp": 0.10651597305488432
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.022634384189854775,
+              "deltaPp": 2.2634384189854773
+            },
+            {
+              "model": "meta/muse-spark-1.3-contributor-20260902",
+              "share": 0.02024754992873342,
+              "deltaPp": 0.6254873526561652
+            }
+          ]
+        },
+        {
+          "tag": "agent:multi_step_planning",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.07970935794861735,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.1909366215170607,
+              "deltaPp": 12.654954595164863
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.13697395128078568,
+              "deltaPp": 13.697395128078568
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.09434430895524142,
+              "deltaPp": -5.498284259615023
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.04694578013822611,
+              "deltaPp": 4.668354818819265
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.0443692086984614,
+              "deltaPp": 4.408893255609274
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.041836360830763336,
+              "deltaPp": 0.20020902026953794
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.036208409360225194,
+              "deltaPp": -2.455251416649777
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.02625930342910347,
+              "deltaPp": 0.235642121777261
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.025317650589427674,
+              "deltaPp": -7.159186573877671
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.023519100504251784,
+              "deltaPp": 2.3519100504251784
+            }
+          ]
+        },
+        {
+          "tag": "classification_tagging",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0734114840803062,
+          "models": [
+            {
+              "model": "typesafe/jev-1.13-20260917",
+              "share": 0.10476381001217483,
+              "deltaPp": 10.476381001217483
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.09110124353708295,
+              "deltaPp": 9.110124353708295
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.08030327323370662,
+              "deltaPp": 4.624955829462339
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.07812118761616618,
+              "deltaPp": -0.46816679452008764
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.06764646459967547,
+              "deltaPp": -2.739641961499914
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.05228633672950666,
+              "deltaPp": 5.217532881156317
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.03912423621612766,
+              "deltaPp": 3.8914237807461713
+            },
+            {
+              "model": "minimax/minimax-m3-20260531",
+              "share": 0.026763590218626995,
+              "deltaPp": -2.046134492469405
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.025401733965517734,
+              "deltaPp": -5.516416520289134
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.01903200342547401,
+              "deltaPp": -2.41244236407008
+            }
+          ]
+        },
+        {
+          "tag": "code:debugging",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.06655502884587776,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.1921944927394022,
+              "deltaPp": 13.711554691345873
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.1580023547295714,
+              "deltaPp": 15.800235472957139
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.07439678107718777,
+              "deltaPp": 0.846751173997673
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.07148149288611877,
+              "deltaPp": -3.6542665243816788
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.05924963494977776,
+              "deltaPp": 5.887256130791005
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.03882002516819652,
+              "deltaPp": -11.819846344975224
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.032628415061957836,
+              "deltaPp": 3.258175539177846
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.02673233210689129,
+              "deltaPp": 0.3778812325989138
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.025589947722502338,
+              "deltaPp": 0.17615519582736444
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.025210471254648464,
+              "deltaPp": 2.5210471254648463
+            }
+          ]
+        },
+        {
+          "tag": "code:file_read_write",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.05284713992231784,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.17900546039379328,
+              "deltaPp": 12.319481167273144
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.14580622970704152,
+              "deltaPp": 14.580622970704152
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.08239504093069223,
+              "deltaPp": -9.012918379798794
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.07151745265788567,
+              "deltaPp": -2.52494075219369
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.057397748325105524,
+              "deltaPp": 5.719293457270334
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.0497247697800181,
+              "deltaPp": 0.7404177818984697
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.02724570870129192,
+              "deltaPp": 2.7183647112602913
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.026072979788185815,
+              "deltaPp": -6.497002035132225
+            },
+            {
+              "model": "tencent/hy3-20260706",
+              "share": 0.02504386475327586,
+              "deltaPp": -3.6219751388992054
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.02342525899660789,
+              "deltaPp": 2.342525899660789
+            }
+          ]
+        },
+        {
+          "tag": "data:extraction",
+          "macroCategory": "data",
+          "spendShareOfTotal": 0.04819356226252223,
+          "models": [
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.10657830932203488,
+              "deltaPp": 10.657830932203488
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.0982122666079063,
+              "deltaPp": 7.194341694616127
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.08510761948648292,
+              "deltaPp": 2.2385358492127265
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.05291361440273508,
+              "deltaPp": -5.012938943558733
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.049577142770093695,
+              "deltaPp": -6.888373098948231
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.04624983149651868,
+              "deltaPp": 4.624983149651868
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.044473238827431066,
+              "deltaPp": 4.434708774387758
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.028417355943832497,
+              "deltaPp": -2.350733757719323
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.026743881665734322,
+              "deltaPp": -3.2624234714434763
+            },
+            {
+              "model": "tencent/hy3-20260706",
+              "share": 0.019209079057567996,
+              "deltaPp": -2.539008589958284
+            }
+          ]
+        },
+        {
+          "tag": "code:review_security",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.029580133177458088,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.17993960769720943,
+              "deltaPp": 12.303413245313402
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.13582121932142918,
+              "deltaPp": -5.889341867094106
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.13574639715716183,
+              "deltaPp": 13.574639715716183
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.07116828661919504,
+              "deltaPp": -12.803563598755503
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.045267906885577934,
+              "deltaPp": 4.489258127123554
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.041844069865029636,
+              "deltaPp": 4.178755410244094
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.0349059192203415,
+              "deltaPp": 0.2733288327564559
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.0316401525952211,
+              "deltaPp": -0.7184402857241791
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.030774525147625433,
+              "deltaPp": -0.6483438416818217
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20261017",
+              "share": 0.02703179730772549,
+              "deltaPp": 2.703179730772549
+            }
+          ]
+        },
+        {
+          "tag": "roleplay_fiction",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.027886589522419465,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.12038924036110989,
+              "deltaPp": -5.649886229099015
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.10839615400955714,
+              "deltaPp": 8.988432003140534
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.0631644045037561,
+              "deltaPp": -3.531596845358065
+            },
+            {
+              "model": "google/gemini-3-flash-preview-20251217",
+              "share": 0.05519249956700537,
+              "deltaPp": -0.8011077542433958
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.05425483482149834,
+              "deltaPp": 1.288121766386719
+            },
+            {
+              "model": "deepseek/deepseek-v3.2-20251201",
+              "share": 0.03993975689838576,
+              "deltaPp": -1.2966493193994602
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.0344197524686629,
+              "deltaPp": 3.4141566023520156
+            },
+            {
+              "model": "google/gemma-4-31b-it-20260402",
+              "share": 0.033261676096833184,
+              "deltaPp": 0.4291535795745448
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.027427780225178458,
+              "deltaPp": 1.4608873342870559
+            },
+            {
+              "model": "google/gemini-2.5-flash-lite",
+              "share": 0.02712201233831072,
+              "deltaPp": -1.740355911410034
+            }
+          ]
+        },
+        {
+          "tag": "code:frontend_ui",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.027459477357702333,
+          "models": [
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.17577761513849868,
+              "deltaPp": 17.577761513849868
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.1503884105288269,
+              "deltaPp": 10.343041119540345
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.09688750920624646,
+              "deltaPp": 9.644797432295722
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.08304056136255394,
+              "deltaPp": 1.2384357143985558
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.053329060866457195,
+              "deltaPp": -5.540855834172263
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.03918562720503787,
+              "deltaPp": 3.9145469079506383
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.037021005570952815,
+              "deltaPp": -0.13003144034814187
+            },
+            {
+              "model": "meta/muse-spark-1.3-contributor-20260902",
+              "share": 0.03628568097507553,
+              "deltaPp": 1.8209580383841395
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.030481398044556293,
+              "deltaPp": 3.048139804455629
+            },
+            {
+              "model": "z-ai/glm-5.2-20260616",
+              "share": 0.029011713478212214,
+              "deltaPp": -1.278508756994668
+            }
+          ]
+        },
+        {
+          "tag": "qa_knowledge",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.027008066735791873,
+          "models": [
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.2141948166796459,
+              "deltaPp": 21.41948166796459
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.13243128617821837,
+              "deltaPp": 8.064276208078017
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.05646137930097472,
+              "deltaPp": 5.646137930097472
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.055562360567757776,
+              "deltaPp": -9.031601003012604
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.05532516570695027,
+              "deltaPp": -4.253773910689492
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.042243043484661326,
+              "deltaPp": 4.199667463487977
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.0347860338217081,
+              "deltaPp": 3.4566641509205422
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.024770146466397858,
+              "deltaPp": -0.1418146110347216
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.022836361397975874,
+              "deltaPp": -1.3903271911418478
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.019939195228000677,
+              "deltaPp": -3.8927792165414172
+            }
+          ]
+        },
+        {
+          "tag": "code:shell_execution",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.02674971565006222,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.24867778095296994,
+              "deltaPp": 19.74100611381755
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.11145057910453314,
+              "deltaPp": 11.145057910453314
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.09554243308744835,
+              "deltaPp": -0.701611703812674
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.05612349025229179,
+              "deltaPp": 1.3920515556456305
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.05139847299868002,
+              "deltaPp": 5.113001873014367
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.04437516911280207,
+              "deltaPp": 2.1675935528394774
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.025977958506623426,
+              "deltaPp": -0.12639251664880863
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.023429163984618286,
+              "deltaPp": 2.3357939883808396
+            },
+            {
+              "model": "google/gemini-3.8-flash-20260902",
+              "share": 0.020545502587747375,
+              "deltaPp": -1.670769663577098
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.019624412050404653,
+              "deltaPp": -7.480222823388183
+            }
+          ]
+        },
+        {
+          "tag": "content_writing",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.026553074672876004,
+          "models": [
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.18831903832751037,
+              "deltaPp": 12.067767828944225
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.14499418892488788,
+              "deltaPp": 10.634313003172915
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.08251638262842448,
+              "deltaPp": 8.251638262842448
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.06220898878537738,
+              "deltaPp": -1.7060266488406917
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.043203428604963165,
+              "deltaPp": -4.141636557792354
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.041776438364441684,
+              "deltaPp": -9.011352664841143
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.03926987948090392,
+              "deltaPp": 3.913134377270637
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.022505008327048995,
+              "deltaPp": 2.2309320395247343
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.02246805065565955,
+              "deltaPp": 2.246805065565955
+            },
+            {
+              "model": "tencent/hy3-20260706",
+              "share": 0.019248456004912574,
+              "deltaPp": -1.5536189624367585
+            }
+          ]
+        },
+        {
+          "tag": "conversational_reply",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.024295166552556088,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.13930948050888606,
+              "deltaPp": 10.39279936793053
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.08465322415023159,
+              "deltaPp": 8.46532241502316
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.07093718430531044,
+              "deltaPp": 7.074278873066274
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.06978842375833186,
+              "deltaPp": -6.505455000107113
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.06579058660543911,
+              "deltaPp": -0.6450606711834075
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.05967938427190717,
+              "deltaPp": 0.4295904043224975
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.04825462279217344,
+              "deltaPp": -4.4056755953469775
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.04157616516633199,
+              "deltaPp": -2.1776426060518688
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.02923497486244452,
+              "deltaPp": 2.914031729185966
+            },
+            {
+              "model": "tencent/hy3-20260706",
+              "share": 0.023570434857310626,
+              "deltaPp": -3.01294448128998
+            }
+          ]
+        },
+        {
+          "tag": "summarization",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.019269744460619534,
+          "models": [
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.5103403985536555,
+              "deltaPp": 51.034039855365556
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.06268504872912883,
+              "deltaPp": 6.262055551474635
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.05169170508697815,
+              "deltaPp": 0.3136142396438876
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.043285112401839215,
+              "deltaPp": 2.3729203120509768
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.027411190676332842,
+              "deltaPp": 2.741119067633284
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.02563218469536355,
+              "deltaPp": -4.0736701046169514
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.024361017849617698,
+              "deltaPp": 2.4270456711379285
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.024343126030540903,
+              "deltaPp": -5.341171801969593
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.024263285092271675,
+              "deltaPp": -8.699905516988206
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.012089456836785003,
+              "deltaPp": -4.284621447174318
+            }
+          ]
+        },
+        {
+          "tag": "data:transformation",
+          "macroCategory": "data",
+          "spendShareOfTotal": 0.016794511983234003,
+          "models": [
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.20642544493985143,
+              "deltaPp": 6.498667345527934
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.12048118621281108,
+              "deltaPp": 9.058087100372193
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.08026055248107795,
+              "deltaPp": 8.026055248107795
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.07257764902587904,
+              "deltaPp": -3.7957276264663804
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.04054325850248336,
+              "deltaPp": 4.042368860332201
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.04005530392897505,
+              "deltaPp": -7.592159369386782
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.03605371226398388,
+              "deltaPp": -7.4834385131962975
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.03282693378351735,
+              "deltaPp": -1.0823178116944152
+            },
+            {
+              "model": "tencent/hy3-20260706",
+              "share": 0.026172852309934748,
+              "deltaPp": -1.7792737818825648
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.019881010830183735,
+              "deltaPp": 1.970623158698779
+            }
+          ]
+        },
+        {
+          "tag": "code:repo_scan",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.01480447239434901,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.1916171615896167,
+              "deltaPp": 13.613823156212812
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.17069924548353876,
+              "deltaPp": 17.069924548353875
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.0946994534930193,
+              "deltaPp": 9.442728208583379
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.07670705133911308,
+              "deltaPp": -0.12360635124668978
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.06727452351697283,
+              "deltaPp": -4.40629075427732
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.03452660981379757,
+              "deltaPp": 3.452660981379757
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.024650227188366864,
+              "deltaPp": 2.4606217294890533
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.022068310847998082,
+              "deltaPp": 0.15885576319149206
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.02008551860323675,
+              "deltaPp": -7.697336096497613
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.017914452392750545,
+              "deltaPp": -0.824993950213735
+            }
+          ]
+        },
+        {
+          "tag": "security_audit",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.013414669146278915,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.32429569200120145,
+              "deltaPp": 20.56059591763717
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.13379206416182224,
+              "deltaPp": 1.3290168221342213
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.07178074574889,
+              "deltaPp": -2.709697693802793
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.07027871412195982,
+              "deltaPp": 6.969070418353233
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.06986407798754307,
+              "deltaPp": 6.986407798754307
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20261017",
+              "share": 0.06353931077359891,
+              "deltaPp": 6.353931077359891
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-pro-20260921",
+              "share": 0.026739247587801922,
+              "deltaPp": 2.3957756107723043
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.02561087095606011,
+              "deltaPp": -10.213567720027344
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.019670080684846675,
+              "deltaPp": -0.560811737362962
+            },
+            {
+              "model": "minimax/minimax-m3.1-flash-20261019:free",
+              "share": 0.01749063942203165,
+              "deltaPp": 1.749063942203165
+            }
+          ]
+        },
+        {
+          "tag": "agent:tool_dispatch",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.013393233318107961,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.18404912595718928,
+              "deltaPp": 11.880082971057778
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.09862856281042337,
+              "deltaPp": -1.0139233242011116
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.09798886851782561,
+              "deltaPp": 9.79888685178256
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.07328718889527919,
+              "deltaPp": 7.301898588884484
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.035013520118634456,
+              "deltaPp": -8.046466974760085
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.02925718301153106,
+              "deltaPp": 1.0625754747657639
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.02774048646558986,
+              "deltaPp": -1.0871941263859166
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.027513622973650946,
+              "deltaPp": -8.636775419230503
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.02703084304886606,
+              "deltaPp": 2.6802859576686475
+            },
+            {
+              "model": "openai/gpt-6-sol-20260922",
+              "share": 0.025008005933225996,
+              "deltaPp": 2.4988838404775358
+            }
+          ]
+        },
+        {
+          "tag": "agent:memory_extraction",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.012141171685257668,
+          "models": [
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.1897041084860608,
+              "deltaPp": 18.960800917679332
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.11248426254782988,
+              "deltaPp": 8.282037219936596
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.10285714087598685,
+              "deltaPp": 10.285714087598684
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.084997531654027,
+              "deltaPp": 0.36321314532406085
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.05642020120065155,
+              "deltaPp": -2.097887375337005
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.0465074418764792,
+              "deltaPp": -6.046684496632112
+            },
+            {
+              "model": "poolside/laguna-s-2.1-20260720:free",
+              "share": 0.033963858322223574,
+              "deltaPp": -0.17425585412029418
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.028029722509842654,
+              "deltaPp": -3.491427471701198
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.023262700694674725,
+              "deltaPp": 2.3262700694674723
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.017775536795480214,
+              "deltaPp": 1.77356755903807
+            }
+          ]
+        },
+        {
+          "tag": "research_report",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.010491513719896114,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.15690864593981121,
+              "deltaPp": 10.918189155998245
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.12753294908801913,
+              "deltaPp": 12.753294908801912
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.09614321627313939,
+              "deltaPp": -5.725358416017691
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.0645352646633731,
+              "deltaPp": -3.3092618547411607
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.06077507238555426,
+              "deltaPp": 6.046605767648447
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.03099306553895847,
+              "deltaPp": 3.084055947935407
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.027975587794977514,
+              "deltaPp": 0.5548672354742878
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.02669932855511191,
+              "deltaPp": -6.0580704752784795
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.025406030762087316,
+              "deltaPp": 2.5406030762087317
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.024678909452965237,
+              "deltaPp": -2.691543792835055
+            }
+          ]
+        },
+        {
+          "tag": "customer_support",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.009561854828367806,
+          "models": [
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.10594598090458146,
+              "deltaPp": 10.570526811994178
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.10572181350512776,
+              "deltaPp": 7.990173013168647
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.058749787927728295,
+              "deltaPp": -4.869792502360257
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.051252820930138276,
+              "deltaPp": -5.013953105412347
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.048858010283795925,
+              "deltaPp": 0.909670151736805
+            },
+            {
+              "model": "google/gemini-2.5-flash",
+              "share": 0.041703667737305945,
+              "deltaPp": -1.3520749037676665
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.03914774881453526,
+              "deltaPp": -3.19085437297923
+            },
+            {
+              "model": "google/gemini-3-flash-preview-20251217",
+              "share": 0.038397501948466674,
+              "deltaPp": -1.0546361705995655
+            },
+            {
+              "model": "openai/gpt-5.4-nano-20260317",
+              "share": 0.03567073355685498,
+              "deltaPp": -0.9817373680566378
+            },
+            {
+              "model": "google/gemini-3.1-flash-lite-20260507",
+              "share": 0.027519207111984648,
+              "deltaPp": -0.31857307105924576
+            }
+          ]
+        },
+        {
+          "tag": "agent:web_search",
+          "macroCategory": "agent",
+          "spendShareOfTotal": 0.008103666994762275,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.15232969044156253,
+              "deltaPp": 10.83394463401221
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.09994358561223983,
+              "deltaPp": 9.994358561223983
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.08026017675264475,
+              "deltaPp": -3.467781780245814
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.050129674289601356,
+              "deltaPp": -1.3913170892891653
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.047803513986473464,
+              "deltaPp": 4.7454702881075
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.04750434380060648,
+              "deltaPp": 4.738295477307817
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.04042873025992776,
+              "deltaPp": -1.0501448577011026
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.03694541099426114,
+              "deltaPp": -0.013482931715242535
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.03637390951354976,
+              "deltaPp": -1.1947509858593406
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.035324128156098866,
+              "deltaPp": -7.009390654847109
+            }
+          ]
+        },
+        {
+          "tag": "code:devops_config",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.0077293162571368205,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.3317485489102005,
+              "deltaPp": 29.165684673995823
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.13192284817806466,
+              "deltaPp": 13.192284817806465
+            },
+            {
+              "model": "openai/gpt-5.6-sol-20260709",
+              "share": 0.07156597623711401,
+              "deltaPp": 4.70694767378488
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.059328200875769566,
+              "deltaPp": 5.909505248485499
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.05481066518185518,
+              "deltaPp": -0.028274840107968963
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.054358545950230465,
+              "deltaPp": -10.630654085149061
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.0243877817809572,
+              "deltaPp": 0.48157847701538403
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.024192422283840623,
+              "deltaPp": 2.4179423421606545
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.01953167344800052,
+              "deltaPp": 1.9531673448000522
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.01677040805270866,
+              "deltaPp": -8.020197789664158
+            }
+          ]
+        },
+        {
+          "tag": "code:sql_database",
+          "macroCategory": "code",
+          "spendShareOfTotal": 0.004942166597380938,
+          "models": [
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.14827170194325995,
+              "deltaPp": 14.827170194325994
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.14503176761846426,
+              "deltaPp": 10.19740233539445
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.08586917910051706,
+              "deltaPp": 8.566483581717776
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.08209832732463004,
+              "deltaPp": 1.7078117901693863
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.07525988870340364,
+              "deltaPp": 7.495470885678128
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.060463885498584224,
+              "deltaPp": -3.1941980862242785
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.04153154986589986,
+              "deltaPp": -6.67551109039646
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.03192937003910523,
+              "deltaPp": -0.26280659346445345
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.021626111229658723,
+              "deltaPp": 2.162611122965872
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.018611447274547593,
+              "deltaPp": -7.250439311058618
+            }
+          ]
+        },
+        {
+          "tag": "devops",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.004512613731515025,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.16541218358010862,
+              "deltaPp": 11.492533691483322
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.14488667136718836,
+              "deltaPp": 14.488667136718835
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.09274659961071445,
+              "deltaPp": -2.7848062594124463
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.08241929924136168,
+              "deltaPp": 2.1963899556820308
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.0700599139896196,
+              "deltaPp": 6.97444700223466
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.036751330890132924,
+              "deltaPp": -9.802422699826769
+            },
+            {
+              "model": "stepfun/step-5-preview-20261008",
+              "share": 0.02837199353336569,
+              "deltaPp": 2.837199353336569
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.025664177725662846,
+              "deltaPp": 2.5664177725662847
+            },
+            {
+              "model": "z-ai/glm-5.3-20260816",
+              "share": 0.024909860123136986,
+              "deltaPp": 0.20259265469518595
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.024293497147732802,
+              "deltaPp": 0.6531471156326685
+            }
+          ]
+        },
+        {
+          "tag": "finance_trading",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0035997822766055,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.19686070777756598,
+              "deltaPp": 12.36948676586067
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.07959489288937052,
+              "deltaPp": 7.9594892889370525
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.07391725036281215,
+              "deltaPp": -14.404237189847896
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.07198707388414924,
+              "deltaPp": 0.5739514441536628
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.047830513150846944,
+              "deltaPp": -1.69972160577442
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.038791580643157526,
+              "deltaPp": 1.1054677039683731
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.03106766236629664,
+              "deltaPp": 3.096051592628832
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.030000569350279765,
+              "deltaPp": -2.477409831297887
+            },
+            {
+              "model": "typesafe/jev-1.13-20260917",
+              "share": 0.02068016332293991,
+              "deltaPp": 2.068016332293991
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.019146397967640737,
+              "deltaPp": 1.905073681077973
+            }
+          ]
+        },
+        {
+          "tag": "translation",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0023075851364027715,
+          "models": [
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.15885009565112163,
+              "deltaPp": 15.885009565112163
+            },
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.08333014061237823,
+              "deltaPp": 6.581301613525743
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.07275324983995853,
+              "deltaPp": -1.5825925335628253
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.05845390111744929,
+              "deltaPp": -7.105581072702847
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.05548613449439688,
+              "deltaPp": 5.5416789218502585
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.04704349771780226,
+              "deltaPp": -4.895720279680351
+            },
+            {
+              "model": "xiaomi/mimo-v2.6-flash-20260921",
+              "share": 0.03649608374010424,
+              "deltaPp": 3.6326496422696515
+            },
+            {
+              "model": "tencent/hy4-preview-20260827",
+              "share": 0.02811283464543625,
+              "deltaPp": 0.7369241662825553
+            },
+            {
+              "model": "google/gemini-2.5-flash-lite",
+              "share": 0.027864911182088545,
+              "deltaPp": -0.6784557240000828
+            },
+            {
+              "model": "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
+              "share": 0.022072206332411397,
+              "deltaPp": -2.1517026222151148
+            }
+          ]
+        },
+        {
+          "tag": "math",
+          "macroCategory": "general",
+          "spendShareOfTotal": 0.0016440323622693386,
+          "models": [
+            {
+              "model": "deepseek/deepseek-v4.1-flash-20260910",
+              "share": 0.16254514817168558,
+              "deltaPp": 10.365123996688398
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260731",
+              "share": 0.08225785236927338,
+              "deltaPp": -12.04952470614646
+            },
+            {
+              "model": "openai/gpt-6-luna-20260922",
+              "share": 0.06241572334285143,
+              "deltaPp": 6.2366787581221255
+            },
+            {
+              "model": "anthropic/claude-opus-5.5-20260921",
+              "share": 0.05506236871780677,
+              "deltaPp": 5.506068321510998
+            },
+            {
+              "model": "stealth/space-bunny-alpha",
+              "share": 0.048784808946011,
+              "deltaPp": 4.8784808946011
+            },
+            {
+              "model": "z-ai/glm-5.3-flash-20260826",
+              "share": 0.039524681381332624,
+              "deltaPp": -2.3730736979185125
+            },
+            {
+              "model": "typesafe/jev-1.13-20260917",
+              "share": 0.03702978258466729,
+              "deltaPp": 3.7029782584667292
+            },
+            {
+              "model": "moonshotai/kimi-k3-20260715",
+              "share": 0.03348288963150422,
+              "deltaPp": 0.894244792531897
+            },
+            {
+              "model": "openai/gpt-5.6-luna-20260709",
+              "share": 0.025777752868248568,
+              "deltaPp": -1.4971374963043547
+            },
+            {
+              "model": "deepseek/deepseek-v4-flash-20260423",
+              "share": 0.02575436210349795,
+              "deltaPp": -6.6561755504915805
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
