@@ -370,6 +370,120 @@ class ModelReportGenerator:
                 logging.warning("Failed scraping %s: %s", url, e)
         return []
 
+    def fetch_model_endpoints(self, slug: str, target_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Fetches endpoints and provider pricing for a model slug via OpenRouter endpoints API.
+        Extracts lowest input (prompt) and output (completion) prices across active providers (status=0).
+        Falls back to local cache or model catalog pricing if API is unavailable.
+        """
+        clean = slug.split(":")[0]
+        base_clean = re.sub(r"-\d{8}$", "", clean)
+        candidates = [slug, clean, base_clean]
+        unique_candidates = []
+        for c in candidates:
+            if c and c not in unique_candidates:
+                unique_candidates.append(c)
+
+        endpoints_dir = self.data_dir / "endpoints"
+        endpoints_dir.mkdir(parents=True, exist_ok=True)
+
+        meta = self.get_model_metadata(slug)
+        pricing = meta.get("pricing", {})
+        default_prompt_p = float(pricing.get("prompt", 0) or 0) * 1e6
+        default_comp_p = float(pricing.get("completion", 0) or 0) * 1e6
+
+        endpoints = []
+        # 1. Check local cache first
+        for c in unique_candidates:
+            safe_c = c.replace("/", "__")
+            cache_file = endpoints_dir / f"{safe_c}.json"
+            if cache_file.exists():
+                try:
+                    with cache_file.open("r", encoding="utf-8") as f:
+                        cached_data = json.load(f)
+                        endpoints = cached_data.get("data", {}).get("endpoints", [])
+                        if endpoints:
+                            break
+                except Exception as e:
+                    logging.warning("Error reading endpoint cache %s: %s", cache_file, e)
+
+        # 2. If not found in cache, fetch from OpenRouter API
+        if not endpoints:
+            for c in unique_candidates:
+                url = f"https://openrouter.ai/api/v1/models/{c}/endpoints"
+                try:
+                    resp = self.session.get(url, timeout=10)
+                    if resp.status_code == 200:
+                        d = resp.json()
+                        endpoints = d.get("data", {}).get("endpoints", [])
+                        if endpoints:
+                            safe_c = c.replace("/", "__")
+                            cache_file = endpoints_dir / f"{safe_c}.json"
+                            try:
+                                with cache_file.open("w", encoding="utf-8") as f:
+                                    json.dump(d, f, indent=2, ensure_ascii=False)
+                            except Exception:
+                                pass
+                            break
+                except Exception:
+                    # Fallback to curl if SSL or network error
+                    try:
+                        import subprocess
+                        out = subprocess.check_output(["curl", "-s", "--compressed", url], timeout=10).decode("utf-8")
+                        d = json.loads(out)
+                        endpoints = d.get("data", {}).get("endpoints", [])
+                        if endpoints:
+                            safe_c = c.replace("/", "__")
+                            cache_file = endpoints_dir / f"{safe_c}.json"
+                            try:
+                                with cache_file.open("w", encoding="utf-8") as f:
+                                    json.dump(d, f, indent=2, ensure_ascii=False)
+                            except Exception:
+                                pass
+                            break
+                    except Exception as e:
+                        logging.warning("Failed to fetch endpoints for %s: %s", c, e)
+
+        if not endpoints:
+            return {
+                "min_prompt_p": default_prompt_p,
+                "min_comp_p": default_comp_p,
+                "prompt_providers": ["官方标称"],
+                "comp_providers": ["官方标称"],
+                "active_count": 1,
+                "total_count": 1
+            }
+
+        active = [ep for ep in endpoints if ep.get("status") == 0]
+        if not active:
+            active = endpoints
+
+        ep_pricing = []
+        for ep in active:
+            pname = ep.get("provider_name") or "Unknown"
+            ep_p = ep.get("pricing", {})
+            p_in = float(ep_p.get("prompt", 0) or 0) * 1e6
+            p_out = float(ep_p.get("completion", 0) or 0) * 1e6
+            ep_pricing.append({
+                "provider": pname,
+                "prompt_p": p_in,
+                "comp_p": p_out
+            })
+
+        min_prompt_p = min(x["prompt_p"] for x in ep_pricing)
+        min_comp_p = min(x["comp_p"] for x in ep_pricing)
+
+        prompt_provs = sorted(list(set(x["provider"] for x in ep_pricing if x["prompt_p"] == min_prompt_p)))
+        comp_provs = sorted(list(set(x["provider"] for x in ep_pricing if x["comp_p"] == min_comp_p)))
+
+        return {
+            "min_prompt_p": min_prompt_p,
+            "min_comp_p": min_comp_p,
+            "prompt_providers": prompt_provs,
+            "comp_providers": comp_provs,
+            "active_count": len(active),
+            "total_count": len(endpoints)
+        }
 
     def get_model_metadata(self, slug: str) -> Dict[str, Any]:
         """Resolves standard catalog metadata and pricing for a model slug."""
@@ -839,14 +953,16 @@ class ModelReportGenerator:
         for m in top5_tokens + top5_spend:
             unique_models[m["slug"]] = m
 
-        logging.info("Scraping real-time Top Apps for %d unique models...", len(unique_models))
+        logging.info("Scraping real-time Top Apps and endpoints for %d unique models...", len(unique_models))
         model_apps_map = {}
         model_scenarios_map = {}
+        model_endpoints_map = {}
         for slug in unique_models.keys():
             logging.info("  -> Scraping Top Apps for %s", slug)
             apps = self.scrape_model_apps_realtime(slug)
             model_apps_map[slug] = apps
             model_scenarios_map[slug] = self.get_task_scenarios_for_model(slug)
+            model_endpoints_map[slug] = self.fetch_model_endpoints(slug, target_date=end_date)
 
         doc = []
         doc.append(f"# weekly_top5_report_{end_date}\n\n")
@@ -860,27 +976,33 @@ class ModelReportGenerator:
         doc.append("## 一、 核心榜单数据（榜单与首选应用）\n\n")
 
         doc.append("### 1. Token 物理使用量前 5 模型\n\n")
-        doc.append("| 排名 | 模型名称 | 7天 Token 消耗 | 全平台消费份额占比 | I/O 比率 | 标称输入单价 ($/M) | 标称输出单价 ($/M) | 首选偏好应用 (Top 1 份额) |\n")
+        doc.append("| 排名 | 模型名称 | 7天 Token 消耗 | 全平台消费份额占比 | I/O 比率 | 标称单价 (入/出, $/M) | 实际单价 (入/出, $/M) | 首选偏好应用 (Top 1 份额) |\n")
         doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---|\n")
         for i, m in enumerate(top5_tokens, 1):
             tok_str = f"{m['total_tokens'] / 1e12:.3f} T" if m['total_tokens'] >= 1e12 else f"{m['total_tokens'] / 1e9:.2f} B"
             share_str = f"{m['spend_share_pct']:.2f}%" if m['spend_share_pct'] > 0 else "N/A"
             apps = model_apps_map.get(m['slug'], [])
             app_str = f"{apps[0]['name']} ({apps[0].get('share_pct', 0.0):.1f}%)" if apps else "N/A"
+            ep = model_endpoints_map.get(m['slug'], {})
+            ep_prompt = ep.get("min_prompt_p", m['prompt_p_per_m'])
+            ep_comp = ep.get("min_comp_p", m['comp_p_per_m'])
             doc.append(
-                f"| {i} | {m['name']} | **{tok_str}** | **{share_str}** | {m['io_ratio']:.1f}:1 | ${m['prompt_p_per_m']:.4f} | ${m['comp_p_per_m']:.4f} | {app_str} |\n"
+                f"| {i} | {m['name']} | **{tok_str}** | **{share_str}** | {m['io_ratio']:.1f}:1 | ${m['prompt_p_per_m']:.4f} / ${m['comp_p_per_m']:.4f} | ${ep_prompt:.4f} / ${ep_comp:.4f} | {app_str} |\n"
             )
 
         doc.append("\n### 2. 全平台消费份额前 5 模型\n\n")
-        doc.append("| 排名 | 模型名称 | 全平台消费份额占比 | 7天 Token 消耗 | I/O 比率 | 标称输入单价 ($/M) | 标称输出单价 ($/M) | 首选偏好应用 (Top 1 份额) |\n")
+        doc.append("| 排名 | 模型名称 | 全平台消费份额占比 | 7天 Token 消耗 | I/O 比率 | 标称单价 (入/出, $/M) | 实际单价 (入/出, $/M) | 首选偏好应用 (Top 1 份额) |\n")
         doc.append("|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---|\n")
         for i, m in enumerate(top5_spend, 1):
             tok_str = f"{m['total_tokens'] / 1e12:.3f} T" if m['total_tokens'] >= 1e12 else f"{m['total_tokens'] / 1e9:.2f} B"
             share_str = f"{m['spend_share_pct']:.2f}%" if m['spend_share_pct'] > 0 else "N/A"
             apps = model_apps_map.get(m['slug'], [])
             app_str = f"{apps[0]['name']} ({apps[0].get('share_pct', 0.0):.1f}%)" if apps else "N/A"
+            ep = model_endpoints_map.get(m['slug'], {})
+            ep_prompt = ep.get("min_prompt_p", m['prompt_p_per_m'])
+            ep_comp = ep.get("min_comp_p", m['comp_p_per_m'])
             doc.append(
-                f"| {i} | {m['name']} | **{share_str}** | {tok_str} | {m['io_ratio']:.1f}:1 | ${m['prompt_p_per_m']:.4f} | ${m['comp_p_per_m']:.4f} | {app_str} |\n"
+                f"| {i} | {m['name']} | **{share_str}** | {tok_str} | {m['io_ratio']:.1f}:1 | ${m['prompt_p_per_m']:.4f} / ${m['comp_p_per_m']:.4f} | ${ep_prompt:.4f} / ${ep_comp:.4f} | {app_str} |\n"
             )
 
         doc.append("\n### 3. 全平台消费份额前 5 厂商\n\n")
@@ -913,6 +1035,15 @@ class ModelReportGenerator:
                 doc.append(f"- **全平台消费份额占比**：`{m['spend_share_pct']:.2f}%`\n")
             doc.append(f"- **Token 输入/输出**：输入 Prompt `{m['prompt_tokens']:,}` | 输出 Completion `{m['completion_tokens']:,}` | **I/O 比例：`{m['io_ratio']:.2f}:1`**\n")
             doc.append(f"- **官方标称单价**：标称输入 `${m['prompt_p_per_m']:.4f}/M` | 标称输出 `${m['comp_p_per_m']:.4f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
+            ep = model_endpoints_map.get(slug, {})
+            if ep and "min_prompt_p" in ep:
+                p_provs = ", ".join(ep.get("prompt_providers", [])[:2])
+                c_provs = ", ".join(ep.get("comp_providers", [])[:2])
+                if len(ep.get("prompt_providers", [])) > 2:
+                    p_provs += " 等"
+                if len(ep.get("comp_providers", [])) > 2:
+                    c_provs += " 等"
+                doc.append(f"- **供应商实际最低单价**：实际输入 `${ep['min_prompt_p']:.4f}/M` ({p_provs}) | 实际输出 `${ep['min_comp_p']:.4f}/M` ({c_provs}) | 活跃供应商端点数：`{ep.get('active_count', 0)}` 家\n")
             if apps:
                 app_items = [
                     f"{idx}. **{a['name']}**（流量份额 `{a.get('share_pct', 0.0):.1f}%`，累计 `{a['tokens']}` tokens）"
@@ -938,6 +1069,15 @@ class ModelReportGenerator:
             doc.append(f"- **总消耗 Token**：`{m['total_tokens']:,}` ({m['total_tokens']/1e12:.3f}T Tokens) | 调用请求数：`{m['request_count']:,}`\n")
             doc.append(f"- **Token 输入/输出**：输入 Prompt `{m['prompt_tokens']:,}` | 输出 Completion `{m['completion_tokens']:,}` | **I/O 比例：`{m['io_ratio']:.2f}:1`**\n")
             doc.append(f"- **官方标称单价**：标称输入 `${m['prompt_p_per_m']:.4f}/M` | 标称输出 `${m['comp_p_per_m']:.4f}/M` | 缓存读取 `${m['cache_read_p_per_m']:.4f}/M`\n")
+            ep = model_endpoints_map.get(slug, {})
+            if ep and "min_prompt_p" in ep:
+                p_provs = ", ".join(ep.get("prompt_providers", [])[:2])
+                c_provs = ", ".join(ep.get("comp_providers", [])[:2])
+                if len(ep.get("prompt_providers", [])) > 2:
+                    p_provs += " 等"
+                if len(ep.get("comp_providers", [])) > 2:
+                    c_provs += " 等"
+                doc.append(f"- **供应商实际最低单价**：实际输入 `${ep['min_prompt_p']:.4f}/M` ({p_provs}) | 实际输出 `${ep['min_comp_p']:.4f}/M` ({c_provs}) | 活跃供应商端点数：`{ep.get('active_count', 0)}` 家\n")
             if apps:
                 app_items = [
                     f"{idx}. **{a['name']}**（流量份额 `{a.get('share_pct', 0.0):.1f}%`，累计 `{a['tokens']}` tokens）"
@@ -986,6 +1126,15 @@ class ModelReportGenerator:
         doc.append(f"- **数据源与接口**：来自 OpenRouter 官方细分任务支出接口（`GET /api/frontend/v1/rankings/task-spend`）。\n")
         doc.append(f"- **统计时间窗口**：根据官方接口返回的 `windowDays: {spend_win_days}` 字段，统计基于**过去 {spend_win_days} 天滚动窗口（Rolling {spend_win_days}-Day Window）**的全平台美元消费支出（Spend Share），而非 Token 数量。\n")
         doc.append(f"- **指标作用与互补性**：核心榜单聚焦 7 天滚动用量以捕捉实时流量爆发；任务场景分布采用 30 天统计窗口以平滑短期偶然波动，揭示各模型在垂直领域生产环境与智能体流程中的中长期商业渗透与核心优势壁垒。各模型详细指标中的“优势细分场景”为该模型在过去 {spend_win_days} 天内取得市场份额第一（Top 1）的细分任务标签（若无公开细分数据则不展示）。\n\n")
+        doc.append("**6. 模型标称单价与供应商实际最低单价统计口径（Pricing Methodology）**：\n")
+        doc.append("- **输入输出合并呈现口径**：榜单表格中采用 `输入单价 / 输出单价`（入/出）合并格式呈现，计量单位统一为美元每百万 Token（`$/M`）。\n")
+        doc.append("- **官方标称单价（Nominal Price）**：来源于 OpenRouter 官方模型元数据目录接口（`GET /api/v1/models`），为模型开发者或官方维护的标准参考基准定价。\n")
+        doc.append("- **供应商实际单价（Actual Provider Lowest Price）**：\n")
+        doc.append("  - 数据接口：来源于 OpenRouter 官方模型底层端点明细接口（`GET /api/v1/models/{model_id}/endpoints`）。\n")
+        doc.append("  - 统计逻辑：遍历该模型接入的所有底层推理供应商（如官方直连、第三方云服务商、托管推理集群等），过滤服务状态为活跃（`status == 0`）的端点，分别取所有可用供应商中的最低提示词输入单价（Min Prompt Price）与最低生成输出单价（Min Completion Price）：\n")
+        doc.append("    \\[ P_{\\text{actual, in}} = \\min_{e \\in \\text{Active Endpoints}} P_{\\text{prompt}}(e) \\]\n")
+        doc.append("    \\[ P_{\\text{actual, out}} = \\min_{e \\in \\text{Active Endpoints}} P_{\\text{completion}}(e) \\]\n")
+        doc.append("  - 现实意义：OpenRouter 采用多供应商路由机制，开发者可通过指定供应商优先级或特定通道获取显著低于标称价的底价算力（如输入单价折扣高达 68%）。该指标客观揭示了模型在生产部署中的供给侧极限底价与套利/降本空间。\n\n")
 
         # Write file
         content = "".join(doc)

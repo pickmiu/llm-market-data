@@ -69,3 +69,26 @@ def test_model_report_generator_spend_and_token_metrics():
     assert sum(v["spend_share_pct"] for v in top_vendors[:5]) > 80.0
 
 
+def test_model_report_generator_endpoints_and_pricing_columns():
+    root = Path(__file__).resolve().parent.parent
+    generator = ModelReportGenerator(project_root=root)
+    generator._load_local_datasets(target_date="2026-10-19")
+
+    # Test endpoints fetch for DeepSeek V4.1 Flash
+    ep_data = generator.fetch_model_endpoints("deepseek/deepseek-v4.1-flash-20260910")
+    assert "min_prompt_p" in ep_data
+    assert "min_comp_p" in ep_data
+    assert ep_data["min_prompt_p"] > 0
+    assert ep_data["min_comp_p"] > 0
+    assert ep_data["active_count"] > 0
+
+    # Test report content formatting
+    report_file = root / "report" / "weekly_top5_report_2026-10-18.md"
+    assert report_file.exists()
+    content = report_file.read_text(encoding="utf-8")
+    assert "标称单价 (入/出, $/M)" in content
+    assert "实际单价 (入/出, $/M)" in content
+    assert "供应商实际最低单价" in content
+    assert "模型标称单价与供应商实际最低单价统计口径" in content
+
+
